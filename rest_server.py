@@ -1,11 +1,14 @@
 import glob
+import json
 from datetime import datetime
 from time import time, sleep
 import os
+import subprocess
 import requests
 from flask import request
 from flask import Flask
 
+import config
 from anyfile2text import paper_reader
 from profiler import qprofile
 app = Flask(__name__)
@@ -46,10 +49,58 @@ def upload( profile=True):
     logging.info("calling ccapp")
     r = requests.post(url="http://localhost:5000/save_text", json={'text':text, 'filename':filename, 'meta':meta})
     #print(r.status_code, r.reason, r.text)
+    with open(html_filename, 'w+') as f:
+        f.write(r.text)
+
     logging.info("finished")
-    return {'html': r.text, 'path': html_filename}
+    return ""
 
 
+@app.route("/recompute_all", methods=["GET"])
+def recompute_all():
+    logging.info("recomputing all documents (hopefully because of new model)")
+    if request.method == 'GET':
+        which = request.args['which']
+        logging.info("give log " + which)
+        try:
+            path = htmls
+            cmd = """python ./client/paper_reader.py "{path}" """.format(path=path)
+            logging.warning('calling command: ' + cmd)
+            subprocess.Popen(cmd, shell=True)
+        except Exception:
+            logging.error("Calling annotation software caused an error, but I will ignore")
+
+    return ""
+
+
+def get_htmls():
+    for subdir, dirs, files in os.walk(htmls):
+        for file in files:
+            if file.endswith(".html"):
+                yield file
+
+@app.route("/paths",  methods=['GET', 'POST'])
+def html_paths():
+    ''' available files '''
+
+    logging.info("get html paths")
+    paths = list(get_htmls())
+    return json.dumps(paths)
+
+@app.route("/html",  methods=['GET', 'POST'])
+def give_html():
+    ''' give file '''
+    if request.method == 'GET':
+        path = htmls + os.sep + request.args['path']
+        logging.info("give file " + path)
+        try:
+            with open( path, 'r+') as f:
+                return f.read().encode();
+        except FileNotFoundError:
+            logging.info("give file " + path)
+            return ""
+    logging.info("no file path given")
+    return ""
 
 
 if __name__ == '__main__':
