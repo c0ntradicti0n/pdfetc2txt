@@ -1,0 +1,6 @@
+flask
+tika
+pyaml
+scipy
+regex
+numpy
