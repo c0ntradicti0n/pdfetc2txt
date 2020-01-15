@@ -3,18 +3,18 @@ recursive = True
 max_len = 200
 
 log_files = {
-    "ccapp": "./log.log",
+    "ccapp": "./CorpusCookApp/log.log",
     "cc": "../CorpusCook/log.log",
-    "dist": "./ai-difference/Distinctiopus/log.log"
+    "dist": "../Distinctiopus4/log.log"
 }
 
 cc_corpus_collection_path = "../CorpusCook/manually_annotated/"
-cc_corpus_working_path = "~/CorpusCook/server/corpus/"
-dist_corpus_path = "~/ai-difference/Distinctiopus4/manual_corpus/"
+cc_corpus_working_path = "../CorpusCook/server/corpus/"
+dist_corpus_path = "../Distinctiopus4/manual_corpus/"
 
-mixer_path = "~/CorpusCook/manually_annotated/mix_corpus_from_manual_files.py"
-mixer_working_dir =  "/roedel/home/finn/CorpusCook/"
-corpuscook_venv = "/roedel/home/finn/CorpusCook/venv/bin/activate"
+mixer_path = "../CorpusCook/manually_annotated/mix_corpus_from_manual_files.py"
+mixer_working_dir =  "../CorpusCook/"
+corpuscook_venv = "../CorpusCook/venv/bin/activate"
 
 science_map_corpus_path="../ScienceMap/manual_corpus/"
 science_map_working_dir="../ScienceMap/"
