@@ -19,6 +19,19 @@ from config import htmls
 def code_detect_replace(text):
     return text
 
+def work_out_file(filename):
+    text_filename = htmls + filename + '.txt'
+    html_filename = htmls + filename + '.html'
+
+    with open(text_filename, 'r+') as f:
+        text = f.read()
+
+    logging.info("calling ccapp")
+    r = requests.post(url="http://localhost:5000/save_text", json={'text':text, 'filename':filename, 'meta':meta})
+    with open(html_filename, 'w+') as f:
+        f.write(r.text)
+
+
 reader = paper_reader(_length_limit=40000)
 @qprofile
 @app.route("/docload", methods=["POST"])
@@ -58,18 +71,10 @@ def upload( profile=True):
 
 @app.route("/recompute_all", methods=["GET"])
 def recompute_all():
-    logging.info("recomputing all documents (hopefully because of new model)")
-    if request.method == 'GET':
-        which = request.args['which']
-        logging.info("give log " + which)
-        try:
-            path = htmls
-            cmd = """python ./client/paper_reader.py "{path}" """.format(path=path)
-            logging.warning('calling command: ' + cmd)
-            subprocess.Popen(cmd, shell=True)
-        except Exception:
-            logging.error("Calling annotation software caused an error, but I will ignore")
-
+    files = os.listdir(htmls)
+    files = [f for f in files if not (f.endswith("html") or f.endswith('txt'))]
+    for f in files:
+        work_out_file(f)
     return ""
 
 
