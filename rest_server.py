@@ -20,6 +20,8 @@ def code_detect_replace(text):
     return text
 
 def work_out_file(filename):
+    meta = {'bla':"huahaua"}
+
     text_filename = htmls + filename + '.txt'
     html_filename = htmls + filename + '.html'
 
