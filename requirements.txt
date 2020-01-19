@@ -4,3 +4,5 @@ pyaml
 scipy
 regex
 numpy
+BeautifulSoup4
+lxml

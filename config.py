@@ -1,4 +1,6 @@
 htmls = "./docs/"
+scraped_difbet = "scraped_difference_between/"
+
 recursive = True
 max_len = 200
 
