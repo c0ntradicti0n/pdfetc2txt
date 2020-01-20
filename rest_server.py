@@ -153,7 +153,7 @@ def div_between_give_html():
     logging.info("get difbet html")
 
     if request.method == 'GET':
-        path = config.difbet + os.sep + request.args['path']
+        path = config.scraped_difbet + os.sep + request.args['path']
         logging.info("give file " + path)
         try:
             with open(path, 'r+') as f:
