@@ -122,7 +122,7 @@ def latest_difference_between(source=config.scraped_difbet):
     f = urllib.request.urlopen('http://differencebetween.net')
     page = f.read()
     soup = BeautifulSoup(page, 'html.parser')
-    name_box = list(soup.find_all('a', attrs = {'rel':'bookmark'})) [:3]
+    name_box = list(soup.find_all('a', attrs = {'rel':'bookmark'})) [:2]
     for anchor in name_box:
         text_ground_path = anchor['title']
         text_path = source +  text_ground_path + '.txt'
