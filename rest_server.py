@@ -77,6 +77,7 @@ def upload( profile=True):
 
 @app.route("/recompute_all", methods=["GET"])
 def recompute_all(folder =htmls):
+    os.system("rm ../CorpusCook/cache/predictions/*.*")
     files = os.listdir(folder)
     files = [f for f in files if not (f.endswith("html") or f.endswith('txt'))]
     for f in files:
