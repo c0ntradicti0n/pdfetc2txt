@@ -9,6 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 from flask import request
 from flask import Flask
+from progress_viewer import mark_new
 
 import config
 from anyfile2text import paper_reader
@@ -107,7 +108,9 @@ def give_html():
         logging.info("give file " + path)
         try:
             with open( path, 'r+') as f:
-                return f.read().encode();
+                html = f.read().encode();
+                html = mark_new(html)
+                return html
         except FileNotFoundError:
             logging.info("give file " + path)
             return ""
@@ -158,7 +161,9 @@ def div_between_give_html():
         logging.info("give file " + path)
         try:
             with open(path, 'r+') as f:
-                return f.read().encode();
+                html = f.read().encode();
+                html = mark_new(html)
+                return html
         except FileNotFoundError:
             logging.info("give file " + path)
             return ""
