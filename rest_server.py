@@ -9,7 +9,9 @@ import requests
 from bs4 import BeautifulSoup
 from flask import request
 from flask import Flask
-from progress_viewer import mark_new
+from regex import regex
+
+from progress_viewer import whats_new
 
 import config
 from anyfile2text import paper_reader
@@ -20,6 +22,26 @@ app = Flask(__name__)
 import logging
 logging.getLogger().setLevel(logging.INFO)
 from config import htmls
+
+def path2doc(path):
+    with open(path, 'r+') as f:
+        html = f.read();
+    occurrences = whats_new(html)
+    tag = "</body"
+    before_end= html.find(tag)
+    html = html[:before_end] + f"""
+    <script onload="console.log('hallo')">
+function markup() {{
+console.log("working");
+mark_what_was_recently_annotated("{"`~`".join(occurrences).replace('"', '')}");
+}}
+$(document).ready(markup);
+    </script>
+        """ + html[before_end:]
+    print (before_end)
+    html = regex.sub(' +', ' ', html)
+    return html.encode()
+
 
 def code_detect_replace(text):
     return text
@@ -100,17 +122,14 @@ def html_paths():
     paths = list(get_htmls())
     return json.dumps(paths)
 
-@app.route("/html",  methods=['GET', 'POST'])
-def give_html():
+@app.route("/doc_html",  methods=['GET', 'POST'])
+def doc_html():
     ''' give file '''
     if request.method == 'GET':
         path = htmls + os.sep + request.args['path']
         logging.info("give file " + path)
         try:
-            with open( path, 'r+') as f:
-                html = f.read().encode();
-                html = mark_new(html)
-                return html
+            return path2doc(path)
         except FileNotFoundError:
             logging.info("give file " + path)
             return ""
@@ -160,10 +179,7 @@ def div_between_give_html():
         path = config.scraped_difbet + os.sep + request.args['path']
         logging.info("give file " + path)
         try:
-            with open(path, 'r+') as f:
-                html = f.read().encode();
-                html = mark_new(html)
-                return html
+            return path2doc(path)
         except FileNotFoundError:
             logging.info("give file " + path)
             return ""

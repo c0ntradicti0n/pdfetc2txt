@@ -29,8 +29,24 @@ def ranges(nums):
     return [(s, e + 1) for s, e in zip(edges, edges)]
 
 
+def not_between(annotation):
+    start = 0
+    for tok, tag in annotation:
+        if tag== 'O':
+            start+=1
+        else:
+            break
+    stop = len(annotation)
+    for tok, tag in annotation[::-1]:
+        if tag=='O':
+            stop-=1
+        else:
+            break
+    return annotation[min([start, stop]): max([start,stop])]
+
+
 class BIO_Annotation:
-    def read_annotation_from_corpus(path):
+    def read_annotation_from_corpus(path, different_only=False, yet=[]):
         with open(path, 'r+') as f:
             text = f.read()
             ##lines = f.readlines()
@@ -46,7 +62,14 @@ class BIO_Annotation:
                 print (f"conll3 reading error in {path} on sample\n '{str(sample)}'")
 
                 raise
-            yield list(zip(tok, tag))
+            res = list(zip(tok, tag))
+            if different_only:
+                actual_text = " ".join(tok for tok, tag in not_between(res))
+                if actual_text in yet:
+                    continue
+                else:
+                    yet.append(actual_text)
+            yield res
 
     def snippets_from_annotation(annotation):
         BIO_Annotation.compute_structured_spans(annotation)

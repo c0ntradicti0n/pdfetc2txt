@@ -10,6 +10,7 @@ log_files = {
     "dist": "../Distinctiopus4/log.log"
 }
 
+new_corpus_increment = "../CorpusCook/server/corpus/"
 cc_corpus_collection_path = "../CorpusCook/manually_annotated/"
 cc_corpus_working_path = "../CorpusCook/server/corpus/"
 dist_corpus_path = "../Distinctiopus4/manual_corpus/"
