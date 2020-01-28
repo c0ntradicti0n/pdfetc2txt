@@ -171,7 +171,7 @@ def latest_difference_between(source=config.scraped_difbet):
 @app.route("/difbet_paths", methods=['GET', 'POST'])
 def difbet_paths():
     ''' available files '''
-    latest_difference_between()
+    #latest_difference_between()
     logging.info("get difbet paths")
     paths = list(get_htmls(folder=config.scraped_difbet))[:5]
     return json.dumps(paths)
