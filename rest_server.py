@@ -114,6 +114,12 @@ def get_htmls(folder=htmls):
             if file.endswith(".html"):
                 yield file
 
+def get_topical_paths(folder=htmls):
+    for subdir, dirs, files in os.walk(folder):
+        for file in files:
+            if file.endswith(".html"):
+                yield file
+
 @app.route("/paths",  methods=['GET', 'POST'])
 def html_paths():
     ''' available files '''

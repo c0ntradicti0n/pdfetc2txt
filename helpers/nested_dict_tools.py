@@ -71,7 +71,7 @@ def flattenDict(d, parent_key='', sep='_'):
 
 
 def reverseDict(dic, end_key, call=None, extra_keys=[], excluded_types=[str, int, float, np.array, np.float64]):
-    """ Reverse nested dict, that the values in the
+    """ Reverse nested dict, that the key and values are exchanged and non-uniqueness is replaced by lists
 
     >>> exampleset = { \
         'body': { \
