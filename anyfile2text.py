@@ -43,7 +43,7 @@ class paper_reader:
 
     def load_text(self, adress):
         logging.info("tika reading text...")
-        if not re.match(r"""((http|https)\:\/\/)?[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*""",
+        if not re.match(r"""((http|https)\:\/\/)[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*""",
             adress        ):
             self.rawText = parser.from_file(adress)
         else:

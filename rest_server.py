@@ -36,6 +36,8 @@ console.log("working");
 mark_what_was_recently_annotated("{"`~`".join(occurrences).replace('"', '')}");
 }}
 $(document).ready(markup);
+
+
     </script>
         """ + html[before_end:]
     print (before_end)

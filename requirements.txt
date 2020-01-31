@@ -6,3 +6,5 @@ regex
 numpy
 BeautifulSoup4
 lxml
+suffix-trees
+more_itertools
