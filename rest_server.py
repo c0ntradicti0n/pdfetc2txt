@@ -127,7 +127,7 @@ def html_paths():
     ''' available files '''
 
     logging.info("get html paths")
-    paths = list(get_htmls())
+    paths = list(sorted(get_htmls()))
     return json.dumps(paths)
 
 @app.route("/doc_html",  methods=['GET', 'POST'])
