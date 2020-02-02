@@ -43,13 +43,12 @@ class paper_reader:
 
     def load_text(self, adress):
         logging.info("tika reading text...")
-        if not re.match(r"""((http|https)\:\/\/)[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*""",
-            adress        ):
-            self.rawText = parser.from_file(adress)
-        else:
-            response = urllib.request.urlopen(adress)
-            data = response.read()  # a `bytes` object
-            self.rawText = parser.from_buffer(data)
+        self.rawText = parser.from_file(adress)
+
+    def load_url(self, adress):
+        response = urllib.request.urlopen(adress)
+        data = response.read()  # a `bytes` object
+        self.rawText = parser.from_buffer(data)
 
     def analyse(self):
         """ Extracts prose text from  the loaded texts, that may contain line numbers somewhere, adresses, journal links etc.
