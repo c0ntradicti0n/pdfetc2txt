@@ -24,7 +24,7 @@ logging.getLogger().setLevel(logging.INFO)
 from config import htmls
 
 def path2doc(path):
-    with open(path, 'r+') as f:
+    with open(path + ".html", 'r+') as f:
         html = f.read();
     occurrences = whats_new(html)
     tag = "</body"
@@ -67,7 +67,7 @@ reader = paper_reader(_length_limit=40000)
 @qprofile
 @app.route("/docload", methods=["POST"])
 def upload( profile=True):
-    meta = {'bla':"huahaua"}
+    meta = {'bitbtexdata':"NotImplemented"}
     uploaded_bytes = request.data
     filename = request.args['filename']
     text_filename = htmls + filename + '.txt'
@@ -81,22 +81,22 @@ def upload( profile=True):
 
         reader.load_text(path)
         text = reader.analyse()
-        print (text)
+        logging.info(text[:100])
         with open(text_filename, 'w+') as f:
             f.write(text)
-
         code_detect_replace (text)
     else:
         with open(text_filename, 'r+') as f:
             text = f.read()
 
     logging.info("calling ccapp")
-    r = requests.post(url="http://localhost:5000/save_text", json={'text':text, 'filename':filename, 'meta':meta})
+    parsed_document = requests.post(url="http://localhost:5000/save_text", json={'text':text, 'filename':filename, 'meta':meta})
     #print(r.status_code, r.reason, r.text)
     with open(html_filename, 'w+') as f:
-        f.write(r.text)
+        f.write(parsed_document .text)
 
-    logging.info("finished")
+    t_docs.update()
+    logging.info("finished upload, topic modelling and upmarking")
     return ""
 
 
@@ -116,12 +116,21 @@ def get_htmls(folder=htmls):
             if file.endswith(".html"):
                 yield file
 
-def get_topical_paths(folder=htmls):
-    for subdir, dirs, files in os.walk(folder):
-        for file in files:
-            if file.endswith(".html"):
-                yield file
+import topic_modelling
+t_diff = topic_modelling.Topicist(directory='scraped_difference_between')
+t_docs = topic_modelling.Topicist(directory='docs')
 
+@app.route("/diff_paths",  methods=['GET', 'POST'])
+def get_topical_paths_diff():
+    logging.info("give topic modelled paths for differencebetween")
+    return json.dumps(t_diff.get_paths())
+
+@app.route("/docs_paths",  methods=['GET', 'POST'])
+def get_topical_paths_docs():
+    logging.info("give topic modelled paths for docs")
+    return json.dumps(t_docs.get_paths())
+
+"""
 @app.route("/paths",  methods=['GET', 'POST'])
 def html_paths():
     ''' available files '''
@@ -129,8 +138,8 @@ def html_paths():
     logging.info("get html paths")
     paths = list(sorted(get_htmls()))
     return json.dumps(paths)
-
-@app.route("/doc_html",  methods=['GET', 'POST'])
+"""
+@app.route("/get_doc",  methods=['GET', 'POST'])
 def doc_html():
     ''' give file '''
     if request.method == 'GET':
@@ -143,7 +152,6 @@ def doc_html():
             return ""
     logging.info("no file path given")
     return ""
-
 
 
 wpp = WebPageParser(config.scraped_difbet)
@@ -164,13 +172,12 @@ def latest_difference_between(source=config.scraped_difbet):
             content = urllib.request.urlopen(anchor['href'])
             text = wpp.html_to_text(content)
             logging.info(f"text starts with '{text[:100]}'")
-
             with open(text_path, 'w+') as text_file:
                 text_file.write(text)
-
             work_out_file(text_ground_path, folder=source)
+            t_diff.update()
 
-@app.route("/difbet_paths", methods=['GET', 'POST'])
+@app.route("/diff_paths_list", methods=['GET', 'POST'])
 def difbet_paths():
     ''' available files '''
     latest_difference_between()
@@ -178,8 +185,8 @@ def difbet_paths():
     paths = list(get_htmls(folder=config.scraped_difbet))[:5]
     return json.dumps(paths)
 
-@app.route("/difbet_html", methods=['GET', 'POST'])
-def div_between_give_html():
+@app.route("/get_diff", methods=['GET', 'POST'])
+def difffs_html():
     ''' give file '''
     logging.info("get difbet html")
 

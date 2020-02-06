@@ -8,3 +8,7 @@ BeautifulSoup4
 lxml
 suffix-trees
 more_itertools
+dariah
+pandas
+gensim
+multi_rake
