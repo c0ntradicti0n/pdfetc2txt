@@ -30,15 +30,14 @@ def path2doc(path):
     tag = "</body"
     before_end= html.find(tag)
     html = html[:before_end] + f"""
-    <script onload="console.log('hallo')">
-function markup() {{
-console.log("working");
-mark_what_was_recently_annotated("{"`~`".join(occurrences).replace('"', '')}");
-}}
-$(document).ready(markup);
-$(window).load(markup);
-
-    </script>
+<script onload="">
+    function markup() {{
+        console.log("working");
+        mark_what_was_recently_annotated("{"`~`".join(occurrences).replace('"', '')}");
+        }}
+    $(document).ready(markup);
+    $(window).load(markup);
+</script>
         """ + html[before_end:]
     print (before_end)
     html = regex.sub(' +', ' ', html)
@@ -101,8 +100,12 @@ def upload( profile=True):
 
 
 @app.route("/recompute_all", methods=["GET"])
-def recompute_all(folder =htmls):
+def recompute_all():
     os.system("rm ../CorpusCook/cache/predictions/*.*")
+    recompute("./docs/")
+    recompute("./scraped_difference_between/")
+
+def recompute(folder):
     files = os.listdir(folder)
     files = [f for f in files if not (f.endswith("html") or f.endswith('txt'))]
     for f in files:
