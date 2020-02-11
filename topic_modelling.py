@@ -59,13 +59,14 @@ class Topicist:
 
         self.headword2doc = {}
         for topic, docs in self.topic2doc.items():
-            self.headword2doc[self.min_distant(docs)] = docs
+            self.headword2doc[self.create_headwords(docs)] = docs
 
-    def min_distant(self, paths):
+    def create_headwords(self, paths):
         text = ""
         for path in paths:
             with open(self.directory + "/" + path +".txt", 'r+', errors='ignore') as f:
                 text += f.read() + " "
+                text = self.clean_text(text)
         poss_headwords = rake.apply(text)
         return poss_headwords[0][0]
 
@@ -84,10 +85,12 @@ class Topicist:
     def get_paths(self):
         return self.headword2doc
 
-
+    def clean_text(self, text):
+        allowed_chars = sorted(""" 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz""")
+        return "".join(c for c in text if c in allowed_chars)
 
 def main():
-    t = topicist()
+    t = Topicist()
     pprint (t.get_paths())
 
 if __name__ == '__main__':
