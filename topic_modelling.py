@@ -67,7 +67,7 @@ class Topicist:
             with open(self.directory + "/" + path +".txt", 'r+', errors='ignore') as f:
                 text += f.read() + " "
         poss_headwords = rake.apply(text)
-        return poss_headwords[int(len(poss_headwords)/2)][1]
+        return poss_headwords[0][0]
 
         """
         combinations = itertools.combinations(topic_words)
