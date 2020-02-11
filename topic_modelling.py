@@ -19,8 +19,8 @@ class Topicist:
     def update(self):
 
         self.lda_model, self.vis = dariah.topics(directory=self.directory,
-                                   stopwords=20,
-                                    num_topics=5,
+                                   stopwords=100,
+                                    num_topics=8,
                                     num_iterations=1000)
 
         print (self.lda_model.topics.iloc[:10, :5])
@@ -67,7 +67,7 @@ class Topicist:
             with open(self.directory + "/" + path +".txt", 'r+', errors='ignore') as f:
                 text += f.read() + " "
         poss_headwords = rake.apply(text)
-        return poss_headwords[int(len(poss_headwords)/2)][0]
+        return poss_headwords[int(len(poss_headwords)/2)][1]
 
         """
         combinations = itertools.combinations(topic_words)
