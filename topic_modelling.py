@@ -6,7 +6,11 @@ import dariah
 import pandas
 from gensim.models.fasttext import FastText
 from multi_rake import Rake
-rake = Rake()
+rake = Rake(language_code="en",
+            min_chars=3,
+            max_words=2,
+            min_freq=2,
+            )
 
 from helpers.nested_dict_tools import reverseDict
 
