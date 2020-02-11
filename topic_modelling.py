@@ -7,9 +7,9 @@ import pandas
 from gensim.models.fasttext import FastText
 from multi_rake import Rake
 rake = Rake(language_code="en",
-            min_chars=3,
+            min_chars=10,
             max_words=2,
-            min_freq=2,
+            min_freq=5,
             )
 
 from helpers.nested_dict_tools import reverseDict
