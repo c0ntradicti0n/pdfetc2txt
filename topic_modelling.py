@@ -62,8 +62,8 @@ class Topicist:
                 self.topic2doc[topic] = [doc]
 
         self.headword2doc = {}
-        for topic, docs in self.topic2doc.items():
-            self.headword2doc[self.create_headwords(docs)] = docs
+        for topic, doc_paths in self.topic2doc.items():
+            self.headword2doc[self.create_headwords(doc_paths)] = doc_paths
 
     def create_headwords(self, paths):
         text = ""
@@ -72,7 +72,10 @@ class Topicist:
                 text += f.read() + " "
                 text = self.clean_text(text)
         poss_headwords = rake.apply(text)
-        return poss_headwords[0][0]
+        if poss_headwords:
+            return poss_headwords[0][0]
+        else:
+            return "no topic set"
 
         """
         combinations = itertools.combinations(topic_words)

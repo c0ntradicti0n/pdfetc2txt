@@ -39,7 +39,6 @@ def path2doc(path):
     $(window).load(markup);
 </script>
         """ + html[before_end:]
-    print (before_end)
     html = regex.sub(' +', ' ', html)
     return html.encode()
 
@@ -48,7 +47,7 @@ def code_detect_replace(text):
     return text
 
 def work_out_file(filename, folder=htmls):
-    meta = {'bla':"huahaua"}
+    meta = {'lorem':"ipsum"}
 
     text_filename = folder + filename + '.txt'
     html_filename = folder + filename + '.html'
