@@ -49,7 +49,7 @@ class paper_reader:
         logging.info(f"extracting text from {adress}")
         try:
             with urlopen(adress).read().decode('utf-8') as fdoc:
-                soup = bs4.BeautifulSoup(fdoc)
+                soup = bs4.BeautifulSoup(fdoc, parent="lxml")
                 return soup.get_text()
         except ValueError:
             with open(adress, "r") as fdoc:
@@ -61,9 +61,9 @@ class paper_reader:
             html_path = self.pdfpath2htmlpath(adress)
 
             os.system(f"pdf2htmlEX --decompose-ligature 1 \"{adress}\" \"{html_path}\"")
-            self.just_extract_text_from_html(html_path)
+            self.text = self.just_extract_text_from_html(html_path)
         elif adress.endswith('html'):
-            self.just_extract_text_from_html(adress)
+            self.text =  self.just_extract_text_from_html(adress)
         elif adress.endswith('txt'):
             with open(adress, 'r') as f:
                 self.text = f.read()
