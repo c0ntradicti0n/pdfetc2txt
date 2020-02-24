@@ -113,7 +113,8 @@ class paper_reader:
 
     def pdfpath2htmlpaths(self, adress):
         filename, file_extension = os.path.splitext(adress)
+        path = os.path.dirname(adress)
         html_before_indexing =filename + ".html"
-        html_after_indexing = adress + ".pdf2htmlEX.html"
-        json_text_extract = config.appcorpuscook_json_dir +  filename + ".json"
+        html_after_indexing = filename + ".pdf2htmlEX.html"
+        json_text_extract = config.appcorpuscook_json_dir + filename + ".json"
         return html_before_indexing, html_after_indexing, json_text_extract
