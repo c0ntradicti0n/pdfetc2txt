@@ -23,12 +23,27 @@ import logging
 logging.getLogger().setLevel(logging.INFO)
 from config import htmls
 
-def path2doc(path):
+os.system(". ~/.bashrc")
+
+def get_raw_html_doc(path):
     with open(path + ".html", 'r+') as f:
         html = f.read();
     occurrences = whats_new(html)
+    html = insert_markedup_js(html, occurrences)
+    return html.encode()
+
+
+def get_pdf2htmlEX_doc(path):
+    with open(path, 'r+') as f:
+        html = f.read();
+    occurrences = whats_new(html)
+    html = insert_markedup_js(html, occurrences)
+    return html.encode()
+
+
+def insert_markedup_js(html, occurrences):
     tag = "</body"
-    before_end= html.find(tag)
+    before_end = html.find(tag)
     html = html[:before_end] + f"""
 <script onload="">
     function markup() {{
@@ -40,7 +55,7 @@ def path2doc(path):
 </script>
         """ + html[before_end:]
     html = regex.sub(' +', ' ', html)
-    return html.encode()
+    return html
 
 
 def code_detect_replace(text):
@@ -56,9 +71,13 @@ def work_out_file(filename, folder=htmls):
         text = f.read()
 
     logging.info("calling ccapp")
-    r = requests.post(url="http://localhost:5000/save_text", json={'text':text, 'filename':filename, 'meta':meta})
-    with open(html_filename, 'w+') as f:
-        f.write(r.text)
+    try:
+        r = requests.post(url="http://localhost:5000/save_text", json={'text':text, 'filename':filename, 'meta':meta})
+        with open(html_filename, 'w+') as f:
+            f.write(r.text)
+    except ConnectionError:
+        logging.error("Got no text, but connection was lost. CorpusCook was killed?")
+
 
 
 reader = paper_reader(_length_limit=40000)
@@ -77,7 +96,7 @@ def upload( profile=True):
         logging.info('file uploaded to folder')
         path = htmls + filename
 
-        reader.load_text(path)
+        reader.document2text(path)
         text = reader.analyse()
         logging.info(text[:100])
         with open(text_filename, 'w+') as f:
@@ -146,12 +165,19 @@ def doc_html():
     ''' give file '''
     if request.method == 'GET':
         path = htmls + os.sep + request.args['path']
-        logging.info("give file " + path)
-        try:
-            return path2doc(path)
-        except FileNotFoundError:
+        pdf2htmlEX_path = path + ".pdf2htmlEX.html"
+
+        # If it could be parsed with pdf2htmlEX
+        if os.path.exists(pdf2htmlEX_path):
+            return get_pdf2htmlEX_doc(pdf2htmlEX_path)
+        else:
+            # Fallbach to tika
             logging.info("give file " + path)
-            return ""
+            try:
+                return get_raw_html_doc(path)
+            except FileNotFoundError:
+                logging.info("not found " + path)
+                return ""
     logging.info("no file path given")
     return ""
 
@@ -196,7 +222,7 @@ def difffs_html():
         path = config.scraped_difbet + os.sep + request.args['path']
         logging.info("give file " + path)
         try:
-            return path2doc(path)
+            return get_raw_html_doc(path)
         except FileNotFoundError:
             logging.info("give file " + path)
             return ""

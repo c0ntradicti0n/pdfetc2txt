@@ -1,7 +1,12 @@
 import logging
+import os
+import subprocess
 import urllib
 from statistics import mean
+from urllib.request import urlopen
 
+import bs4
+import docker
 import regex as re
 from tika import parser
 from scipy.stats import ks_2samp
@@ -41,14 +46,38 @@ class paper_reader:
                                     'interesting general theory. '.lower()
                                 )
 
-    def load_text(self, adress):
-        logging.info("tika reading text...")
-        self.rawText = parser.from_file(adress)
+    def just_extract_text_from_html(self, adress):
+        logging.info(f"extracting text from {adress}")
+        try:
+            with urlopen(adress).read().decode('utf-8') as fdoc:
+                soup = bs4.BeautifulSoup(fdoc)
+                return soup.get_text()
+        except ValueError:
+            with open(adress, "r") as fdoc:
+                soup = bs4.BeautifulSoup(fdoc)
+                return soup.get_text()
+
+    client = docker.from_env()
+    def document2text(self, adress):
+        if adress.endswith('pdf'):
+            os.system(f"pdf2htmlEX --decompose-ligature 1 {adress}")
+            html_path = self.pdfpath2htmlpath(adress)
+            self.just_extract_text_from_html(html_path)
+        elif adress.endswith('html'):
+            self.just_extract_text_from_html(adress)
+        elif adress.endswith('txt'):
+            with open(adress, 'r') as f:
+                self.text = f.read()
+        else:
+            logging.info("tika reading text...")
+            self.text = parser.from_file(adress)
+        logging.info(f"extracted text: {self.text[100:]}")
+        return None
 
     def load_url(self, adress):
         response = urllib.request.urlopen(adress)
         data = response.read()  # a `bytes` object
-        self.rawText = parser.from_buffer(data)
+        self.text = parser.from_buffer(data)
 
     def analyse(self):
         """ Extracts prose text from  the loaded texts, that may contain line numbers somewhere, adresses, journal links etc.
@@ -56,7 +85,7 @@ class paper_reader:
         """
         logging.info("transferring text to nlp thing...")
 
-        text = self.rawText['content']
+        text = self.text['content']
         paragraphs = text.split('\n\n')
         print ("mean length of splitted lines", (mean([len(p) for p in paragraphs])))
 
@@ -79,3 +108,7 @@ class paper_reader:
                                      )
 
         return processed_text.strip() [:self.length_limit]
+
+    def pdfpath2htmlpath(self, adress):
+        filename, file_extension = os.path.splitext('/path/to/somefile.ext')
+        return filename + ".pdf2htmlEX.html"
