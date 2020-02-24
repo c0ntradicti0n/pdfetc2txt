@@ -112,9 +112,10 @@ class paper_reader:
         return processed_text.strip() [:self.length_limit]
 
     def pdfpath2htmlpaths(self, adress):
-        filename, file_extension = os.path.splitext(adress)
+        file_extension = os.path.splitext(adress)[1]
+        filename = os.path.basename(adress)
         path = os.path.dirname(adress)
-        html_before_indexing =filename + ".html"
-        html_after_indexing = filename + ".pdf2htmlEX.html"
+        html_before_indexing = config.appcorcook + filename + ".html"
+        html_after_indexing = config.appcorcook + filename + ".pdf2htmlEX.html"
         json_text_extract = config.appcorpuscook_json_dir + filename + ".json"
         return html_before_indexing, html_after_indexing, json_text_extract
