@@ -45,7 +45,7 @@ class paper_reader:
                                     'interesting general theory. '.lower()
                                 )
 
-    def just_extract_text_from_html(self, adress):
+    def just_extract_text_from_html(self, adress, ):
         logging.info(f"extracting text from {adress}")
         try:
             with urlopen(adress).read().decode('utf-8') as fdoc:
@@ -58,7 +58,7 @@ class paper_reader:
 
     def document2text(self, adress):
         if adress.endswith('pdf'):
-            os.system(f"pdf2htmlEX --decompose-ligature 1 {adress}")
+            os.system(f"pdf2htmlEX --decompose-ligature 1 \"{adress}\"")
             html_path = self.pdfpath2htmlpath(adress)
             self.just_extract_text_from_html(html_path)
         elif adress.endswith('html'):
