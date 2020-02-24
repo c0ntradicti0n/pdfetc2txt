@@ -12,3 +12,4 @@ dariah
 pandas
 gensim
 multi_rake
+tinycss

@@ -1,10 +1,6 @@
-import glob
 import json
 import urllib
-from datetime import datetime
-from time import time, sleep
 import os
-import subprocess
 import requests
 from bs4 import BeautifulSoup
 from flask import request
@@ -12,7 +8,6 @@ from flask import Flask
 from regex import regex
 
 from progress_viewer import whats_new
-
 import config
 from anyfile2text import paper_reader
 from profiler import qprofile
@@ -83,7 +78,7 @@ def work_out_file(filename, folder=htmls):
 reader = paper_reader(_length_limit=40000)
 @qprofile
 @app.route("/docload", methods=["POST"])
-def upload( profile=True):
+def upload():
     meta = {'bitbtexdata':"NotImplemented"}
     uploaded_bytes = request.data
     filename = request.args['filename']
@@ -108,7 +103,6 @@ def upload( profile=True):
 
     logging.info("calling ccapp")
     parsed_document = requests.post(url="http://localhost:5000/save_text", json={'text':text, 'filename':filename, 'meta':meta})
-    #print(r.status_code, r.reason, r.text)
     with open(html_filename, 'w+') as f:
         f.write(parsed_document .text)
 
@@ -122,6 +116,7 @@ def recompute_all():
     os.system("rm ../CorpusCook/cache/predictions/*.*")
     recompute("./docs/")
     recompute("./scraped_difference_between/")
+
 
 def recompute(folder):
     files = os.listdir(folder)
@@ -151,15 +146,7 @@ def get_topical_paths_docs():
     logging.info("give topic modelled paths for docs")
     return json.dumps(t_docs.get_paths())
 
-"""
-@app.route("/paths",  methods=['GET', 'POST'])
-def html_paths():
-    ''' available files '''
 
-    logging.info("get html paths")
-    paths = list(sorted(get_htmls()))
-    return json.dumps(paths)
-"""
 @app.route("/get_doc",  methods=['GET', 'POST'])
 def doc_html():
     ''' give file '''
@@ -205,6 +192,7 @@ def latest_difference_between(source=config.scraped_difbet):
             work_out_file(text_ground_path, folder=source)
             t_diff.update()
 
+
 @app.route("/diff_paths_list", methods=['GET', 'POST'])
 def difbet_paths():
     ''' available files '''
@@ -212,6 +200,7 @@ def difbet_paths():
     logging.info("get difbet paths")
     paths = list(get_htmls(folder=config.scraped_difbet))[:5]
     return json.dumps(paths)
+
 
 @app.route("/get_diff", methods=['GET', 'POST'])
 def difffs_html():

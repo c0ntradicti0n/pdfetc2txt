@@ -1,10 +1,10 @@
 import logging
 import os
-import subprocess
 import urllib
+from pprint import pprint
 from statistics import mean
 from urllib.request import urlopen
-
+import true_format_html
 import bs4
 import regex as re
 from tika import parser
@@ -22,6 +22,7 @@ class paper_reader:
     def __init__(self, _threshold = 0.001, _length_limit = 20000):
         #with open('hamlet.txt', 'r+') as f:
         #    self.normal_data = list(f.read())
+        self.tfu = true_format_html.TrueFormatUpmarker()
 
         self.length_limit = _length_limit
         self.threshold = _threshold
@@ -58,10 +59,11 @@ class paper_reader:
 
     def document2text(self, adress):
         if adress.endswith('pdf'):
-            html_path = self.pdfpath2htmlpath(adress)
-
-            os.system(f"pdf2htmlEX --decompose-ligature 1 \"{adress}\" \"{html_path}\"")
-            self.text = self.just_extract_text_from_html(html_path)
+            html_path_before, html_path_after, json_path = self.pdfpath2htmlpaths(adress)
+            os.system(f"pdf2htmlEX --decompose-ligature 1 \"{adress}\" \"{html_path_before}\"")
+            pprint(self.tfu.convert_and_index( html_path_before, html_path_after))
+            self.tfu.save_doc_json(json_path)
+            self.text = self.just_extract_text_from_html(html_path_after)
         elif adress.endswith('html'):
             self.text =  self.just_extract_text_from_html(adress)
         elif adress.endswith('txt'):
@@ -84,8 +86,7 @@ class paper_reader:
         """
         logging.info("transferring text to nlp thing...")
 
-        text = self.text['content']
-        paragraphs = text.split('\n\n')
+        paragraphs = self.text.split('\n\n')
         print ("mean length of splitted lines", (mean([len(p) for p in paragraphs])))
 
         # If TIKA resolved '\n'
@@ -108,6 +109,6 @@ class paper_reader:
 
         return processed_text.strip() [:self.length_limit]
 
-    def pdfpath2htmlpath(self, adress):
+    def pdfpath2htmlpaths(self, adress):
         filename, file_extension = os.path.splitext(adress)
-        return adress + ".pdf2htmlEX.html"
+        return filename + ".html", adress + ".pdf2htmlEX.html", filename + ".json"

@@ -46,3 +46,5 @@ ke_path=  "../KnowledgeScience/knowledge_graph_coords/tsne_clusters_mean_points.
 ke_colors="../KnowledgeScience/knowledge_graph_coords/kn_clusters_mean_points.csv"
 hal = '"../hal/target/hal-1-jar-with-dependencies.jar"'
 video_dir = '../view_control_web/WebContent/resources/media/'
+apache_dir_document = "../../apache-tomcat-9.0.30/webapps/corpuscow/document"
+apache_css_dir = "../apache-tomcat-9.0.30/webapps/corpuscow/resources/css/document/"
