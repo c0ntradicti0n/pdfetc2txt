@@ -115,7 +115,7 @@ class paper_reader:
         file_extension = os.path.splitext(adress)[1]
         filename = os.path.basename(adress)
         path = os.path.dirname(adress)
-        html_before_indexing = config.appcorcook + filename + ".html"
-        html_after_indexing = config.appcorcook + filename + ".pdf2htmlEX.html"
+        html_before_indexing = config.appcorpuscook_html_dir + filename + ".html"
+        html_after_indexing = config.appcorpuscook_pdf_dir + filename + ".pdf2htmlEX.html"
         json_text_extract = config.appcorpuscook_json_dir + filename + ".json"
         return html_before_indexing, html_after_indexing, json_text_extract
