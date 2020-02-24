@@ -6,7 +6,6 @@ from statistics import mean
 from urllib.request import urlopen
 
 import bs4
-import docker
 import regex as re
 from tika import parser
 from scipy.stats import ks_2samp
@@ -57,7 +56,6 @@ class paper_reader:
                 soup = bs4.BeautifulSoup(fdoc)
                 return soup.get_text()
 
-    client = docker.from_env()
     def document2text(self, adress):
         if adress.endswith('pdf'):
             os.system(f"pdf2htmlEX --decompose-ligature 1 {adress}")
