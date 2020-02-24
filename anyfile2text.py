@@ -108,5 +108,5 @@ class paper_reader:
         return processed_text.strip() [:self.length_limit]
 
     def pdfpath2htmlpath(self, adress):
-        filename, file_extension = os.path.splitext('/path/to/somefile.ext')
+        filename, file_extension = os.path.splitext(adress)
         return filename + ".pdf2htmlEX.html"
