@@ -58,8 +58,9 @@ class paper_reader:
 
     def document2text(self, adress):
         if adress.endswith('pdf'):
-            os.system(f"pdf2htmlEX --decompose-ligature 1 \"{adress}\"")
             html_path = self.pdfpath2htmlpath(adress)
+
+            os.system(f"pdf2htmlEX --decompose-ligature 1 \"{adress}\" \"{html_path}\"")
             self.just_extract_text_from_html(html_path)
         elif adress.endswith('html'):
             self.just_extract_text_from_html(adress)
@@ -109,4 +110,4 @@ class paper_reader:
 
     def pdfpath2htmlpath(self, adress):
         filename, file_extension = os.path.splitext(adress)
-        return filename + ".pdf2htmlEX.html"
+        return adress + ".pdf2htmlEX.html"
