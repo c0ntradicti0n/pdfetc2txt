@@ -155,16 +155,10 @@ def doc_html():
         pdf2htmlEX_path = path + ".pdf2htmlEX.html"
 
         # If it could be parsed with pdf2htmlEX
-        if os.path.exists(pdf2htmlEX_path):
-            return get_pdf2htmlEX_doc(pdf2htmlEX_path)
-        else:
-            # Fallbach to tika
-            logging.info("give file " + path)
-            try:
-                return get_raw_html_doc(path)
-            except FileNotFoundError:
-                logging.info("not found " + path)
-                return ""
+        return get_pdf2htmlEX_doc(pdf2htmlEX_path)
+
+        #TODO fallback to TIKA return get_raw_html_doc(path)
+
     logging.info("no file path given")
     return ""
 

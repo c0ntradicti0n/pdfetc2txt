@@ -219,8 +219,12 @@ class TrueFormatUpmarker:
 
 if __name__ == '__main__':
     tfu = TrueFormatUpmarker()
-    pprint(tfu.convert_and_index(html_path='/home/stefan/cow/pdfetc2txt/docs/0013.html'))
-    tfu.save_doc_json(json_path='/home/stefan/cow/pdfetc2txt/docs/0013.json')
+    #pprint(tfu.convert_and_index(html_path='/home/stefan/cow/pdfetc2txt/docs/0013.html'))
+    #tfu.save_doc_json(json_path='/home/stefan/cow/pdfetc2txt/docs/0013.json')
 
-    tfu.convert_and_index(html_path='/home/stefan/cow/pdfetc2txt/docs/what is string theory.html')
+    #tfu.convert_and_index(html_path='/home/stefan/cow/pdfetc2txt/docs/what is string theory.html')
+    #pprint(tfu.get_indexed_words())
+
+    tfu.convert_and_index(html_path_before='/home/stefan/cow/pdfetc2txt/docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.html',
+                          html_path_after='/home/stefan/cow/pdfetc2txt/docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.af.html')
     pprint(tfu.get_indexed_words())
