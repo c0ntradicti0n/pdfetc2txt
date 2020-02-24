@@ -4,6 +4,8 @@ import urllib
 from pprint import pprint
 from statistics import mean
 from urllib.request import urlopen
+
+import config
 import true_format_html
 import bs4
 import regex as re
@@ -111,4 +113,7 @@ class paper_reader:
 
     def pdfpath2htmlpaths(self, adress):
         filename, file_extension = os.path.splitext(adress)
-        return filename + ".html", adress + ".pdf2htmlEX.html", filename + ".json"
+        html_before_indexing =filename + ".html"
+        html_after_indexing = adress + ".pdf2htmlEX.html"
+        json_text_extract = config.appcorpuscook_json_dir +  filename + ".json"
+        return html_before_indexing, html_after_indexing, json_text_extract

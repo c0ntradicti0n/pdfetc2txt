@@ -15,6 +15,7 @@ cc_corpus_collection_path = "../CorpusCook/manually_annotated/"
 cc_corpus_working_path = "../CorpusCook/server/corpus/"
 dist_corpus_path = "../Distinctiopus4/manual_corpus/"
 
+appcorpuscook_json_dir = "../CorpusCook/pdfs/"
 mixer_path = "../CorpusCook/manually_annotated/mix_corpus_from_manual_files.py"
 mixer_working_dir =  "../CorpusCook/"
 corpuscook_venv = "../CorpusCook/venv/bin/activate"
