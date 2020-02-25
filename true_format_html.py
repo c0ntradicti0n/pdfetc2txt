@@ -213,7 +213,6 @@ class TrueFormatUpmarker:
 
     def save_doc_json(self, json_path):
         doc_dict = {"text": " ".join (list(self.indexed_words.values()))}
-        print (doc_dict)
         with open(json_path, "w", encoding="utf8") as f:
             f.write(json.dumps(doc_dict))
 
