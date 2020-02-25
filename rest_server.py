@@ -99,7 +99,7 @@ def upload():
 
 @app.route("/recompute_all", methods=["GET"])
 def recompute_all():
-    os.system("rm ../CorpusCook/cache/predictions/*.*")
+    #os.system("rm ../CorpusCook/cache/predictions/*.*")
     recompute("./docs/")
     recompute("./scraped_difference_between/")
     # Updating topics
