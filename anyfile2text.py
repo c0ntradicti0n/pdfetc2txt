@@ -67,7 +67,7 @@ class paper_reader:
     def parse_file_format(self, adress):
         if adress.endswith('pdf'):
             html_path_before, html_path_after, apache_doc_path, json_path, txt_path = self.pdfpath2htmlpaths(adress)
-            os.system(f"pdf2htmlEX  --space-as-offset 1 --process-type3  1 --optimize-text 1 --decompose-ligature 1  --fit-width 700  \"{adress}\" \"{html_path_before}\"")
+            os.system(f"pdf2htmlEX  --space-as-offset 1 --decompose-ligature 1  --fit-width 700  \"{adress}\" \"{html_path_before}\"")
             self.tfu.convert_and_index( html_path_before, html_path_after)
             os.system(f"cp \"{html_path_after}\" \"{apache_doc_path}\"")
             self.tfu.save_doc_json(json_path)
