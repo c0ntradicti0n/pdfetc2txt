@@ -69,7 +69,7 @@ class paper_reader:
             html_path_before, html_path_after, apache_doc_path, json_path, txt_path = self.pdfpath2htmlpaths(adress)
             os.system(f"pdf2htmlEX --decompose-ligature 1 \"{adress}\" \"{html_path_before}\"")
             self.tfu.convert_and_index( html_path_before, html_path_after)
-            os.system(f"cp {html_path_after} {apache_doc_path}")
+            os.system(f"cp \"{html_path_after}\" \"{apache_doc_path}\"")
             self.tfu.save_doc_json(json_path)
             self.text = self.just_extract_text_from_html(html_path_after)
 
@@ -79,13 +79,8 @@ class paper_reader:
             logging.debug( (html_path_before, html_path_after, apache_doc_path, json_path, txt_path) )
 
             print (f"THIS IS THE PATH!!! {apache_doc_path}")
-            print (f"THIS IS THE PATH!!! {apache_doc_path}")
 
-            print (f"THIS IS THE PATH!!! {apache_doc_path}")
-
-            print (f"THIS IS THE PATH!!! {apache_doc_path}")
-
-            time.sleep(15)
+            time.sleep(2)
 
         #elif adress.endswith('html'):
         #    self.text =  self.just_extract_text_from_html(adress)
