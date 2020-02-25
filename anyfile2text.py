@@ -61,7 +61,7 @@ class paper_reader:
                 return soup.get_text()
         except ValueError:
             with open(adress, "r") as fdoc:
-                soup = bs4.BeautifulSoup(fdoc)
+                soup = bs4.BeautifulSoup(fdoc, parser='lxml')
                 return soup.get_text()
 
     def parse_file_format(self, adress):
