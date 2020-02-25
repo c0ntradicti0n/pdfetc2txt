@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 import urllib
 from pprint import pprint
 from statistics import mean
@@ -76,6 +77,7 @@ class paper_reader:
             with open (txt_path, "w") as f:
                 f.write(self.text)
             logging.debug( (html_path_before, html_path_after, apache_doc_path, json_path, txt_path) )
+            time.sleep(15)
 
         #elif adress.endswith('html'):
         #    self.text =  self.just_extract_text_from_html(adress)
