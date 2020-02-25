@@ -59,21 +59,21 @@ class paper_reader:
                 soup = bs4.BeautifulSoup(fdoc)
                 return soup.get_text()
 
-    def document2text(self, adress):
+    def parse_file_format(self, adress):
         if adress.endswith('pdf'):
             html_path_before, html_path_after, json_path = self.pdfpath2htmlpaths(adress)
             os.system(f"pdf2htmlEX --decompose-ligature 1 \"{adress}\" \"{html_path_before}\"")
             pprint(self.tfu.convert_and_index( html_path_before, html_path_after))
             self.tfu.save_doc_json(json_path)
             self.text = self.just_extract_text_from_html(html_path_after)
-        elif adress.endswith('html'):
-            self.text =  self.just_extract_text_from_html(adress)
-        elif adress.endswith('txt'):
-            with open(adress, 'r') as f:
-                self.text = f.read()
-        else:
-            logging.info("tika reading text...")
-            self.text = parser.from_file(adress)
+        #elif adress.endswith('html'):
+        #    self.text =  self.just_extract_text_from_html(adress)
+        #elif adress.endswith('txt'):
+        #    with open(adress, 'r') as f:
+        #        self.text = f.read()
+        #else:
+        #    logging.info("tika reading text...")
+        #    self.text = parser.from_file(adress)
         logging.info(f"extracted text: {self.text[100:]}")
         return None
 
@@ -86,7 +86,7 @@ class paper_reader:
         """ Extracts prose text from  the loaded texts, that may contain line numbers somewhere, adresses, journal links etc.
         :return str:  prose text
         """
-        logging.info("transferring text to nlp thing...")
+        logging.info("transferring text to CorpusCook...")
 
         paragraphs = self.text.split('\n\n')
         print ("mean length of splitted lines", (mean([len(p) for p in paragraphs])))
@@ -115,7 +115,7 @@ class paper_reader:
         file_extension = os.path.splitext(adress)[1]
         filename = os.path.basename(adress)
         path = os.path.dirname(adress)
-        html_before_indexing = config.appcorpuscook_html_dir + filename + ".html"
-        html_after_indexing = config.appcorpuscook_pdf_dir + filename + ".pdf2htmlEX.html"
-        json_text_extract = config.appcorpuscook_json_dir + filename + ".json"
-        return html_before_indexing, html_after_indexing, json_text_extract
+        self.html_before_indexing = config.appcorpuscook_html_dir + filename + ".html"
+        self.html_after_indexing = config.appcorpuscook_pdf_dir + filename + ".pdf2htmlEX.html"
+        self.json_text_extract = config.appcorpuscook_json_dir + filename + ".json"
+        return self.html_before_indexing, self.html_after_indexing, self.json_text_extract

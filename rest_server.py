@@ -79,35 +79,28 @@ reader = paper_reader(_length_limit=40000)
 @qprofile
 @app.route("/docload", methods=["POST"])
 def upload():
-    meta = {'bitbtexdata':"NotImplemented"}
+    meta = {'bitbtexdata':"Not implemented yet"}
     uploaded_bytes = request.data
     filename = request.args['filename']
-    text_filename = htmls + filename + '.txt'
-    html_filename = htmls + filename + '.html'
 
-    if not os.path.isfile(text_filename):
-        with open(htmls + filename, 'wb') as f:
-            f.write(uploaded_bytes)
-        logging.info('file uploaded to folder')
-        path = htmls + filename
+    logging.info('File upload to folder')
+    with open(htmls + filename, 'wb') as f:
+        f.write(uploaded_bytes)
+    path = htmls + filename
 
-        reader.document2text(path)
-        text = reader.analyse()
-        logging.info(text[:100])
-        with open(text_filename, 'w+') as f:
-            f.write(text)
-        code_detect_replace (text)
-    else:
-        with open(text_filename, 'r+') as f:
-            text = f.read()
+    # Parse the file, text is written in the CorpusCookApps document dir
+    logging.info('Parse file')
+    reader.parse_file_format(path)
 
-    logging.info("calling ccapp")
-    parsed_document = requests.post(url="http://localhost:5000/save_text", json={'text':text, 'filename':filename, 'meta':meta})
-    with open(html_filename, 'w+') as f:
-        f.write(parsed_document .text)
+    # Starting annotation
+    logging.info("Annotating it: Calling CorpusCookApp to call CorpusCook")
+    requests.post(url="http://localhost:5000/annotate_certain_json_in_doc_folder", json={'filename':reader.json_text_extract, 'meta':meta})
 
+    # Updating topics
+    logging.info("Updating topics")
     t_docs.update()
-    logging.info("finished upload, topic modelling and upmarking")
+
+    logging.info("Finished upload, topic modelling and upmarking")
     return ""
 
 
