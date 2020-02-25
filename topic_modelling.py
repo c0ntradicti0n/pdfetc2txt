@@ -25,7 +25,7 @@ class Topicist:
         self.lda_model, self.vis = dariah.topics(directory=self.directory,
                                    stopwords=100,
                                     num_topics=8,
-                                    num_iterations=1000)
+                                    num_iterations=100)
 
         print (self.lda_model.topics.iloc[:10, :5])
 
