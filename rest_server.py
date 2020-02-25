@@ -56,23 +56,21 @@ def insert_markedup_js(html, occurrences):
 def code_detect_replace(text):
     return text
 
-def work_out_file(filename, folder=htmls):
+def work_out_file(path):
     meta = {'lorem':"ipsum"}
 
-    text_filename = folder + filename + '.txt'
-    html_filename = folder + filename + '.html'
+    # Parse the file, text is written in the CorpusCookApps document dir
+    logging.info('Parse file')
+    reader.parse_file_format(path)
 
-    with open(text_filename, 'r+') as f:
-        text = f.read()
+    # Starting annotation
+    logging.info("Annotating it: Calling CorpusCookApp to call CorpusCook")
+    requests.post(url="http://localhost:5000/annotate_certain_json_in_doc_folder",
+                  json={'filename': reader.json_text_extract, 'meta': meta})
 
-    logging.info("calling ccapp")
-    try:
-        r = requests.post(url="http://localhost:5000/save_text", json={'text':text, 'filename':filename, 'meta':meta})
-        with open(html_filename, 'w+') as f:
-            f.write(r.text)
-    except ConnectionError:
-        logging.error("Got no text, but connection was lost. CorpusCook was killed?")
-
+    # Updating topics
+    logging.info("Updating topics")
+    t_docs.update()
 
 
 reader = paper_reader(_length_limit=40000)
@@ -84,23 +82,13 @@ def upload():
     filename = request.args['filename']
     os.system(f"rm \"\{filename}\"")
 
-
     logging.info('File upload to folder')
     with open(htmls + filename, 'wb') as f:
         f.write(uploaded_bytes)
-    path = htmls + filename
+    path = config.appcorpuscook_pdf_dir + filename
 
-    # Parse the file, text is written in the CorpusCookApps document dir
-    logging.info('Parse file')
-    reader.parse_file_format(path)
-
-    # Starting annotation
-    logging.info("Annotating it: Calling CorpusCookApp to call CorpusCook")
-    requests.post(url="http://localhost:5000/annotate_certain_json_in_doc_folder", json={'filename':reader.json_text_extract, 'meta':meta})
-
-    # Updating topics
-    logging.info("Updating topics")
-    t_docs.update()
+    # Parsing, annotating, topic modelling
+    work_out_file(path)
 
     logging.info("Finished upload, topic modelling and upmarking")
     return ""
@@ -149,10 +137,10 @@ def doc_html():
         path = htmls + os.sep + request.args['path']
         pdf2htmlEX_path = path + ".pdf2htmlEX.html"
 
-        # If it could be parsed with pdf2htmlEX
+        # parsed with pdf2htmlEX
         return get_pdf2htmlEX_doc(pdf2htmlEX_path)
 
-        #TODO fallback to TIKA return get_raw_html_doc(path)
+        # TODO fallback to TIKA return get_raw_html_doc(path)
 
     logging.info("no file path given")
     return ""
