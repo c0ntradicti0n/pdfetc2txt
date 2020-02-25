@@ -104,7 +104,7 @@ def recompute(folder):
     files = os.listdir(folder)
     files = [f for f in files if not (f.endswith("html") or f.endswith('txt'))]
     for f in files:
-        work_out_file(f)
+        work_out_file(config.appcorpuscook_pdf_dir + f)
     return ""
 
 
