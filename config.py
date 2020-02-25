@@ -18,7 +18,7 @@ appcorpuscook_json_dir = "../CorpusCookApp/pdfs/"
 appcorpuscook_html_dir = "../pdfetc2txt/docs/"
 appcorpuscook_pdf_dir  = "../pdfetc2txt/docs/"
 appcorpuscook_txt_dir  = "../pdfetc2txt/docs/"
-apache_dir_document = "../../apache-tomcat-9.0.30/webapps/corpuscow/document"
+apache_dir_document = "../apache-tomcat-9.0.30/webapps/corpuscow/document"
 apache_css_dir = "../apache-tomcat-9.0.30/webapps/corpuscow/resources/css/document/"
 
 mixer_path = "../CorpusCook/manually_annotated/mix_corpus_from_manual_files.py"

@@ -67,9 +67,7 @@ def work_out_file(path):
     requests.post(url="http://localhost:5000/annotate_certain_json_in_doc_folder",
                   json={'filename': reader.json_text_extract, 'meta': meta})
 
-    # Updating topics
-    logging.info("Updating topics")
-    t_docs.update()
+
 
 
 reader = paper_reader(_length_limit=40000)
@@ -89,6 +87,10 @@ def upload():
     # Parsing, annotating, topic modelling
     work_out_file(path)
 
+    # Updating topics
+    logging.info("Updating topics")
+    t_docs.update()
+
     logging.info("Finished upload, topic modelling and upmarking")
     return ""
 
@@ -98,6 +100,9 @@ def recompute_all():
     os.system("rm ../CorpusCook/cache/predictions/*.*")
     recompute("./docs/")
     recompute("./scraped_difference_between/")
+    # Updating topics
+    logging.info("Updating topics")
+    t_docs.update()
 
 
 def recompute(folder):
