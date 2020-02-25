@@ -18,6 +18,10 @@ dist_corpus_path = "../Distinctiopus4/manual_corpus/"
 appcorpuscook_json_dir = "../CorpusCookApp/pdfs/"
 appcorpuscook_html_dir = "../pdfetc2txt/docs/"
 appcorpuscook_pdf_dir  = "../pdfetc2txt/docs/"
+appcorpuscook_txt_dir  = "../pdfetc2txt/docs/"
+apache_dir_document = "../../apache-tomcat-9.0.30/webapps/corpuscow/document"
+apache_css_dir = "../apache-tomcat-9.0.30/webapps/corpuscow/resources/css/document/"
+
 mixer_path = "../CorpusCook/manually_annotated/mix_corpus_from_manual_files.py"
 mixer_working_dir =  "../CorpusCook/"
 corpuscook_venv = "../CorpusCook/venv/bin/activate"
@@ -49,5 +53,4 @@ ke_path=  "../KnowledgeScience/knowledge_graph_coords/tsne_clusters_mean_points.
 ke_colors="../KnowledgeScience/knowledge_graph_coords/kn_clusters_mean_points.csv"
 hal = '"../hal/target/hal-1-jar-with-dependencies.jar"'
 video_dir = '../view_control_web/WebContent/resources/media/'
-apache_dir_document = "../../apache-tomcat-9.0.30/webapps/corpuscow/document"
-apache_css_dir = "../apache-tomcat-9.0.30/webapps/corpuscow/resources/css/document/"
+

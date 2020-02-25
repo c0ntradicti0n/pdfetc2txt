@@ -82,6 +82,8 @@ def upload():
     meta = {'bitbtexdata':"Not implemented yet"}
     uploaded_bytes = request.data
     filename = request.args['filename']
+    os.system(f"rm \"\{filename}\"")
+
 
     logging.info('File upload to folder')
     with open(htmls + filename, 'wb') as f:

@@ -61,11 +61,16 @@ class paper_reader:
 
     def parse_file_format(self, adress):
         if adress.endswith('pdf'):
-            html_path_before, html_path_after, json_path = self.pdfpath2htmlpaths(adress)
+            html_path_before, html_path_after, json_path, txt_path = self.pdfpath2htmlpaths(adress)
             os.system(f"pdf2htmlEX --decompose-ligature 1 \"{adress}\" \"{html_path_before}\"")
             pprint(self.tfu.convert_and_index( html_path_before, html_path_after))
             self.tfu.save_doc_json(json_path)
             self.text = self.just_extract_text_from_html(html_path_after)
+
+            # needed for topic modelling
+            with open (txt_path, "w") as f:
+                f.write(self.text)
+
         #elif adress.endswith('html'):
         #    self.text =  self.just_extract_text_from_html(adress)
         #elif adress.endswith('txt'):
@@ -118,4 +123,6 @@ class paper_reader:
         self.html_before_indexing = config.appcorpuscook_html_dir + filename + ".html"
         self.html_after_indexing = config.appcorpuscook_pdf_dir + filename + ".pdf2htmlEX.html"
         self.json_text_extract = config.appcorpuscook_json_dir + filename + ".json"
+        self.txt_path = config.appcorpuscook_txt_dir + filename + ".txt"
+
         return self.html_before_indexing, self.html_after_indexing, self.json_text_extract
