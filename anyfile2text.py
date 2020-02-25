@@ -125,4 +125,4 @@ class paper_reader:
         self.json_text_extract = config.appcorpuscook_json_dir + filename + ".json"
         self.txt_path = config.appcorpuscook_txt_dir + filename + ".txt"
 
-        return self.html_before_indexing, self.html_after_indexing, self.json_text_extract
+        return self.html_before_indexing, self.html_after_indexing, self.json_text_extract, self.txt_path
