@@ -75,6 +75,7 @@ class paper_reader:
             # needed for topic modelling
             with open (txt_path, "w") as f:
                 f.write(self.text)
+            logging.debug( (html_path_before, html_path_after, apache_doc_path, json_path, txt_path) )
 
         #elif adress.endswith('html'):
         #    self.text =  self.just_extract_text_from_html(adress)
