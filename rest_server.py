@@ -16,7 +16,6 @@ from webpageparser import WebPageParser
 app = Flask(__name__)
 import logging
 logging.getLogger().setLevel(logging.INFO)
-from config import htmls
 
 os.system(". ~/.bashrc")
 
@@ -83,9 +82,9 @@ def upload():
     os.system(f"rm \"\{filename}\"")
 
     logging.info('File upload to folder')
-    with open(htmls + filename, 'wb') as f:
-        f.write(uploaded_bytes)
     path = config.appcorpuscook_pdf_dir + filename
+    with open(path, 'wb') as f:
+        f.write(uploaded_bytes)
 
     # Parsing, annotating, topic modelling
     work_out_file(path)
@@ -109,7 +108,7 @@ def recompute(folder):
     return ""
 
 
-def get_htmls(folder=htmls):
+def get_htmls(folder=config.appcorpuscook_pdf_dir):
     for subdir, dirs, files in os.walk(folder):
         for file in files:
             if file.endswith(".html"):
@@ -134,7 +133,7 @@ def get_topical_paths_docs():
 def doc_html():
     ''' give file '''
     if request.method == 'GET':
-        path = htmls + os.sep + request.args['path']
+        path = config.appcorpuscook_pdf_dir + os.sep + request.args['path']
         pdf2htmlEX_path = path + ".pdf2htmlEX.html"
 
         # parsed with pdf2htmlEX
