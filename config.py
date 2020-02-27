@@ -1,5 +1,5 @@
 scraped_difbet = "scraped_difference_between/"
-#parse_pdf2htmlEX = False
+parse_pdf2htmlEX = True
 recursive = True
 max_len = 200
 
