@@ -1,10 +1,10 @@
-import itertools
+import glob
+import json
+import logging
 from pathlib import Path
 from pprint import pprint
-
+import os
 import dariah
-import pandas
-from gensim.models.fasttext import FastText
 from multi_rake import Rake
 rake = Rake(language_code="en",
             min_chars=10,
@@ -12,15 +12,25 @@ rake = Rake(language_code="en",
             min_freq=5,
             )
 
-from helpers.nested_dict_tools import reverseDict
-
-
 class Topicist:
     def __init__(self, directory="docs"):
-        self.directory= directory
+        self.directory = directory
         self.update()
 
     def update(self):
+        self.docs_paths = list(glob.glob(self.directory + "/*.*"))
+        self.state_file = self.directory.replace("\\", "") + ".topicstate";
+        try:
+            with open(f'{self.state_file}', "r") as f:
+                self.state = json.loads(f.read())
+            if self.state['state'] == str (self.docs_paths):
+                self.headword2doc = self.state['result']
+                return
+            else:
+                logging.info("New state, making new topics")
+        except Exception:
+            raise
+            logging.info ("No state file, generating a state")
 
         self.lda_model, self.vis = dariah.topics(directory=self.directory,
                                    stopwords=100,
@@ -29,30 +39,6 @@ class Topicist:
 
         print (self.lda_model.topics.iloc[:10, :5])
 
-        """
-        filepath_pattern="*.txt"
-        directory = "docs"
-        sentences = [[w for w in  sent.split() if len(w)>5]
-                     for text in topicist.read_long_text(directory, filepath_pattern)
-                     for sent in text.split(".") if len(sent)>14
-                     ]
-
-        self.ft_model = FastText(sentences, sg=1, hs=1, size=200, workers=12, iter=2, min_count=2)
-
-        topics =   [list(x) for x in self.lda_model.topics.to_numpy()]
-
-        print ("finding abstractions for each topic")
-        similar = self.ft_model.most_similar(positive=['man', 'code', 'master', 'human'],topn=1)
-        print (similar)
-
-        self.topic_df = self.lda_model.topics
-
-        self.topic_df ['abstraction'] = [self.min_distant(topic_words) for topic_words in topics]
-
-        columns = ['word' +str(i) for i in range(5)] + ['abstraction']
-        with pandas.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
-            print (self.topic_df [columns])
-        """
         self.doc2topic = self.lda_model.topic_document.idxmax(axis=0).to_dict()
         self.topic2doc = {}
         for doc, topic in self.doc2topic.items():
@@ -65,6 +51,13 @@ class Topicist:
         for topic, doc_paths in self.topic2doc.items():
             self.headword2doc[self.create_headwords(doc_paths)] = doc_paths
 
+        with open(self.state_file, "w") as f:
+            state = {
+                'state': str(self.docs_paths),
+                'result': self.headword2doc
+            }
+            f.write(json.dumps(state))
+
     def create_headwords(self, paths):
         text = ""
         for path in paths:
@@ -73,15 +66,10 @@ class Topicist:
                 text = self.clean_text(text)
         poss_headwords = rake.apply(text)
         if poss_headwords:
-            return poss_headwords[0][0]
+            result = poss_headwords[0][0]
+            return result
         else:
             return "no topic set"
-
-        """
-        combinations = itertools.combinations(topic_words)
-        return self.ft_model.most_similar(positive=topic_words[:13],topn=1)[0][0]
-        # CFLAGS="-Wno-narrowing" pip install cld2-cffi
-        """
 
     def read_long_text(dir, pattern):
         filepaths = Path().rglob(dir + "/" + pattern)
