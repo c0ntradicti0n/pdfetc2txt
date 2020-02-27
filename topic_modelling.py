@@ -29,7 +29,6 @@ class Topicist:
             else:
                 logging.info("New state, making new topics")
         except Exception:
-            raise
             logging.info ("No state file, generating a state")
 
         self.lda_model, self.vis = dariah.topics(directory=self.directory,
