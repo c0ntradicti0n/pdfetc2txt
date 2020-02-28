@@ -171,11 +171,11 @@ class TrueFormatUpmarker:
         for text_div in text_divs:
             spaces = [tag for tag in text_div.contents if isinstance(tag, Tag) and tag.get_text()==" "]
             words = TrueFormatUpmarker.tokenize_differential_signs(text_div.get_text())
-            if not words:
+            if not words or not any(words):
                 logging.info("no words were contained, empty text div")
                 continue
             text_div.clear()
-            css_notes, tagged_words = list(zip(*[self.make_new_tag(word) for word in words]))
+            css_notes, tagged_words = list(zip(*[self.make_new_tag(word) for word in words if word]))
             for i, tagged_word in enumerate(tagged_words[::-1]):
                 try:
                     text_div.contents.insert(0, tagged_word)
