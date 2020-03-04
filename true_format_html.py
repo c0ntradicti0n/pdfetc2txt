@@ -3,25 +3,87 @@ from collections import OrderedDict
 from pprint import pprint
 import itertools
 from statistics import stdev
+
+import numpy
+import pandas
 import regex
+from more_itertools.recipes import flatten
 from numpy import mean
+from scipy.stats import ks_2samp
+from sklearn.utils import Memory
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from helpers.color_logger import *
 import bs4
 import tinycss
 from bs4 import Tag
 from tinycss.css21 import RuleSet
+import hdbscan
+
+from helpers.list_tools import reverse_dict_of_lists
+
+
+def normalized(a, axis=-1, order=2):
+    l2 = numpy.atleast_1d(numpy.linalg.norm(a, order, axis))
+    l2[l2==0] = 1
+    return a / numpy.expand_dims(l2, axis)
 
 NORMAL_HEIGHT = 100
 INDEX_WRAP_TAG_NAME = 'z'
 
+algorithms = ['best','generic','prims_kdtree','prims_balltree','boruvka_kdtree','boruvka_balltree']
+metrics = {'braycurtis': hdbscan.dist_metrics.BrayCurtisDistance,
+ 'canberra': hdbscan.dist_metrics.CanberraDistance,
+ 'chebyshev': hdbscan.dist_metrics.ChebyshevDistance,
+ 'cityblock': hdbscan.dist_metrics.ManhattanDistance,
+ 'dice': hdbscan.dist_metrics.DiceDistance,
+ 'euclidean': hdbscan.dist_metrics.EuclideanDistance,
+ 'hamming': hdbscan.dist_metrics.HammingDistance,
+ 'haversine': hdbscan.dist_metrics.HaversineDistance,
+ 'infinity': hdbscan.dist_metrics.ChebyshevDistance,
+ 'jaccard': hdbscan.dist_metrics.JaccardDistance,
+ 'kulsinski': hdbscan.dist_metrics.KulsinskiDistance,
+ 'l1': hdbscan.dist_metrics.ManhattanDistance,
+ 'l2': hdbscan.dist_metrics.EuclideanDistance,
+ 'mahalanobis': hdbscan.dist_metrics.MahalanobisDistance,
+ 'manhattan': hdbscan.dist_metrics.ManhattanDistance,
+ 'matching': hdbscan.dist_metrics.MatchingDistance,
+ 'minkowski': hdbscan.dist_metrics.MinkowskiDistance,
+ 'p': hdbscan.dist_metrics.MinkowskiDistance,
+ 'pyfunc': hdbscan.dist_metrics.PyFuncDistance,
+ 'rogerstanimoto': hdbscan.dist_metrics.RogersTanimotoDistance,
+ 'russellrao': hdbscan.dist_metrics.RussellRaoDistance,
+ 'seuclidean': hdbscan.dist_metrics.SEuclideanDistance,
+ 'sokalmichener': hdbscan.dist_metrics.SokalMichenerDistance,
+ 'sokalsneath': hdbscan.dist_metrics.SokalSneathDistance,
+ 'wminkowski': hdbscan.dist_metrics.WMinkowskiDistance}
+
+NORMAL_TEXT = list(
+    'used are variants of the predicate calculus. He  even says, Lately '
+    'those who think  they ought to be so regarded seem to  be winning. '
+    'Under these circumstances, it does seem odd for McDermott to devote '
+    'much space to  complaining about the logical basis  of a book whose '
+    'very title proclaims  it is about logical foundations. In any  '
+    'case, given such a title, it wouldnt  seem necessary that readers '
+    'should  be warned that the foundations being  explored are not '
+    'In competition with this diversity  is the idea of a unified model '
+    'of inference. The desire for such a model is  strong among those '
+    'who study  declarative representations, and  Genesereth and Nilsson '
+    'are no exception. As are most of their colleagues,  they are drawn '
+    'to the model of inference as the derivation of conclusions  that '
+    'are entailed by a set of beliefs.  They wander from this idea in a '
+    'few  places but not for long. It is not hard  to see why: Deduction '
+    'is one of the  fews kinds of inference for which we  have an '
+    'interesting general theory. tively. The genotyping frequency was 91%  of occupational asthma and trichloramine'
+ 'sensitization have been described in pool life-'.lower()
+)
 class TrueFormatUpmarker:
     def __init__(self):
         self.index_wrap_tag_name = INDEX_WRAP_TAG_NAME
         delimiters = r" ", r"\n"
         self.splitter = '|'.join(map(regex.escape, delimiters))
 
-    def factory(self):
-        pass
 
     def get_pdf2htmlEX_header(tag):
         return tag.attrs['class'][3]
@@ -38,21 +100,27 @@ class TrueFormatUpmarker:
             raise ValueError(f"{pdf_path} must be a pdffile!")
 
     def load(self, html_before_path, html_after_path):
-        with open (html_before_path, 'r', encoding='utf8') as f:
-            self.soup = bs4.BeautifulSoup(f.read(), features='html.parser')
+        for algorithm in ['boruvka_balltree', 'boruvka_kdtree', 'generic', 'prims']:
+            for metric in ['hamming', 'infinity', 'p', 'chebyshev', 'cityblock', 'braycurtis', 'euclidean']:
+                try:
+                    with open (html_before_path, 'r', encoding='utf8') as f:
+                        self.soup = bs4.BeautifulSoup(f.read(), features='html.parser')
 
-        self.css_dict = self.get_css(self.soup)
-        self.pages_list = list(self.fmr_pages(self.soup))
-        self.columns_per_page = list(self.fmr_leftright(self.pages_list, css_dict=self.css_dict))
-        self.reading_sequence_text = list(self.fmr_upbottum(self.columns_per_page, css_dict=self.css_dict))
-        self.indexed_words = {}
-        self.count_i = itertools.count()
+                    self.css_dict = self.get_css(self.soup)
+                    self.pages_list = list(self.fmr_pages(self.soup))
+                    #self.clusters_dict = self.fmr_hdbscan(self.pages_list, self.css_dict, metric=metric, algorithm=algorithm)
+                    self.columns_per_page = list(self.fmr_leftright(self.pages_list, css_dict=self.css_dict))
+                    self.reading_sequence_text = list(self.fmr_upbottum(self.columns_per_page, css_dict=self.css_dict))
+                    self.indexed_words = {}
+                    self.count_i = itertools.count()
 
-        character_splitter = lambda divcontent: TrueFormatUpmarker.tokenize_differential_signs(divcontent)
-        self.index_words(self.reading_sequence_text, splitter=character_splitter, eat_up=False)
+                    character_splitter = lambda divcontent: TrueFormatUpmarker.tokenize_differential_signs(divcontent)
+                    self.index_words(self.reading_sequence_text, splitter=character_splitter, eat_up=False, clusters_dict=self.clusters_dict)
 
-        with open(html_after_path, "w", encoding='utf8') as file:
-            file.write(str(self.soup).replace("<coolwanglu@gmail.com>", "coolwanglu@gmail.com"))
+                    with open(html_after_path+metric+algorithm+".html", "w", encoding='utf8') as file:
+                        file.write(str(self.soup).replace("<coolwanglu@gmail.com>", "coolwanglu@gmail.com"))
+                except Exception as e:
+                    logging.info(f"plotting failes for {algorithm} {metric}")
         return None
 
     def get_css(self, soup):
@@ -73,6 +141,75 @@ class TrueFormatUpmarker:
                 return None, None
             return ident, decla
         return None, None
+
+    def fmr_hdbscan(self, pages, css_dict, debug_pic_name="debug_pics/output.png", **kwargs):
+        """
+        hdbscan on font height, x position and y position to recognize all groups of textboxes in different parts of
+        the layout as footnotes, textcolumns, headers etc.
+        """
+        page2divs = [page.select('div[class*=x]') for page in pages]
+        all_divs = list(flatten(page2divs))
+        hs_xs_ys = [list(self.getxyh(tag, css_dict)) for tag in all_divs]
+        text_prob = [[
+                      2+page_number,
+                      len(div.text),
+                      0]#ks_2samp(NORMAL_TEXT, list(div.text.lower())).pvalue *100 if div.text else 0]
+                      for page_number, divs in enumerate(page2divs) for div in divs]
+        assert(len(hs_xs_ys)==len(text_prob))
+
+        data = numpy.array([list(hxy) + tp for hxy, tp in zip(hs_xs_ys, text_prob)])
+
+        """for metric in metrics.keys():
+            for algorithm in algorithms:
+                try:
+                    clusterer = hdbscan.HDBSCAN( metric=metric, algorithm=algorithm,
+                       min_cluster_size=40, alpha=0.95).   fit(data)
+                    threshold = pandas.Series(clusterer.outlier_scores_).quantile(0.8)
+                    outliers = numpy.where(clusterer.outlier_scores_ > threshold)[0]
+
+                    color_palette = sns.color_palette('deep', 8)
+                    cluster_colors = [color_palette[x] if x >= 0
+                                      else (0.5, 0.5, 0.5)
+                                      for x in clusterer.labels_]
+                    cluster_member_colors = [sns.desaturate(x, p) for x, p in
+                                             zip(cluster_colors, clusterer.probabilities_)]
+                    coords = data.T[1:3]
+                    plt.scatter(*list(coords), c=cluster_member_colors, linewidth=0)
+                    plt.scatter(*list(data[outliers].T[1:3]), s=50, linewidth=0, c='red')
+                    plt.savefig(debug_pic_name+"."+algorithm+"_"+metric+"_"+".png", bbox_inches='tight')
+                except Exception as e:
+                    logging.info(f"Plotting failed {str(e)}" )
+        # best choice was
+        """
+        clusterer = hdbscan.HDBSCAN(**kwargs,
+                                    min_cluster_size=40, alpha=0.95).fit(normalized(data))
+        threshold = pandas.Series(clusterer.outlier_scores_).quantile(0.8)
+        outliers = numpy.where(clusterer.outlier_scores_ > threshold)[0]
+
+
+        # to collect all non text-stuff, look for one or more columns, that end at the same height
+        # make groups of indices
+        cluster2indexlist = {
+            k: [t[0] for t in  g] for k,g in
+                itertools.groupby(list(sorted (enumerate(clusterer.labels_),
+                                       key=lambda t:t[1])),
+                                  key= lambda t:t[1])
+            }
+        # left lowest corners
+        cluster2minbottom_minleft = {
+            k: (min(hs_xs_ys [i][0] for i in g),
+                min(hs_xs_ys[i][1] for i in g),
+                min(hs_xs_ys[i][2] for i in g),
+                len(g))
+
+                for k, g in cluster2indexlist.items()
+
+        }
+        clusters_dict = {all_divs[k]: (abs(i[0]+2)/(len(cluster2indexlist)+2))  if k not in outliers else 1
+             for k, i in reverse_dict_of_lists(cluster2indexlist).items()}
+        return clusters_dict
+
+
 
     def fmr_pages(self, soup):
         return soup.select("div[data-page-no]")
@@ -151,13 +288,14 @@ class TrueFormatUpmarker:
             list_of_words = intermediate_list
         return list_of_words
 
-    def make_new_tag(self, word):
+    def make_new_tag(self, word, debug_percent):
+        p = 1 if debug_percent == 1 else 40
         id = self.count_i.__next__()
-        tag = self.soup.new_tag(self.index_wrap_tag_name, id=f'{INDEX_WRAP_TAG_NAME}{id}')
+        tag = self.soup.new_tag(self.index_wrap_tag_name, id=f'{INDEX_WRAP_TAG_NAME}{id}', style=f"color:hsl({int(debug_percent*100)}, {p}%, {p}%);" )
         tag.append(word)
         return (id, word), tag
 
-    def index_words(self, text_divs, splitter=None, eat_up=True):
+    def index_words(self, text_divs, splitter=None, eat_up=True, clusters_dict ={}):
         """
             splitter is a function that gives back a list of 2-tuples, that mean the starting index,
             where to replace and list of tokens
@@ -169,13 +307,14 @@ class TrueFormatUpmarker:
 
         i = 0
         for text_div in text_divs:
+            debug_percent = clusters_dict[text_div]
             spaces = [tag for tag in text_div.contents if isinstance(tag, Tag) and tag.get_text()==" "]
             words = TrueFormatUpmarker.tokenize_differential_signs(text_div.get_text())
             if not words or not any(words):
                 logging.info("no words were contained, empty text div")
                 continue
             text_div.clear()
-            css_notes, tagged_words = list(zip(*[self.make_new_tag(word) for word in words if word]))
+            css_notes, tagged_words = list(zip(*[self.make_new_tag(word, debug_percent=debug_percent) for word in words if word]))
             for i, tagged_word in enumerate(tagged_words[::-1]):
                 try:
                     text_div.contents.insert(0, tagged_word)
@@ -217,6 +356,18 @@ class TrueFormatUpmarker:
             "indexed_words" : self.indexed_words}
         with open(json_path, "w", encoding="utf8") as f:
             f.write(json.dumps(doc_dict))
+
+    def getxyh(self, tag, css_dict):
+        ht,xt,yt = sorted (attr for attr in tag.attrs['class']
+                           if attr.startswith('x') or
+                              attr.startswith('y') or
+                              attr.startswith('h'))
+        hxys = [self.get_declaration_value(css_dict[ht], 'height'),
+                self.get_declaration_value(css_dict[xt], 'left'),
+                self.get_declaration_value(css_dict[yt], 'bottom')]
+
+        hxys = hxys+ [numpy.sqrt(((hxys[1]-300)**2/(hxys[1]-300)**2+(hxys[2]-600)**2))]
+        return hxys
 
 if __name__ == '__main__':
     tfu = TrueFormatUpmarker()
