@@ -15,6 +15,8 @@ from PIL import Image
 from scipy import stats
 from scipy.signal import find_peaks
 from scipy.stats import ks_2samp
+from sklearn import mixture
+from sklearn.cluster import dbscan, Birch, MiniBatchKMeans
 from sklearn.utils import Memory
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -103,6 +105,8 @@ NORMAL_TEXT = list(
 )
 
 
+
+
 class TrueFormatUpmarker:
     def __init__(self, min_bottom=None, max_bottom=None):
         din_rel = numpy.sqrt(2)
@@ -146,9 +150,10 @@ class TrueFormatUpmarker:
                     self.css_dict = self.get_css(self.soup)
                     self.pages_list = list(self.fmr_pages(self.soup))
 
-                    self.sort_divs_in_cols_lefrig_botup, self.clusters_dict = self.fmr_hdbscan(
+                    self.sort_divs_in_cols_lefrig_botup, self.clusters_dict = \
+                        self.cluster_and_sort_columns(
                           [
-                           Page_Features.density,
+                          Page_Features.density,
                           Page_Features.left,
                           Page_Features.page_number],
                           self.pages_list,
@@ -179,7 +184,7 @@ class TrueFormatUpmarker:
                         file.write(str(self.soup).replace("<coolwanglu@gmail.com>", "coolwanglu@gmail.com"))
 
                 except Exception as e:
-                    #raise #
+                    raise #
                     logging.info(f"plotting failes for {algorithm} {metric}")
         return None
 
@@ -204,13 +209,13 @@ class TrueFormatUpmarker:
             return ident, decla
         return None, None
 
-    def fmr_hdbscan(self,
-                    features_to_use,
-                    pages,
-                    css_dict,
-                    debug_pic_name="debug_pics/output.png",
-                    debug = True,
-                    **kwargs):
+    def cluster_and_sort_columns(self,
+                                 features_to_use,
+                                 pages,
+                                 css_dict,
+                                 debug_pic_name="debug_pics/output.png",
+                                 debug = True,
+                                 **kwargs):
         """
         hdbscan on font height, x position and y position to recognize all groups of textboxes in different parts of
         the layout as footnotes, text columns, headers etc.
@@ -243,14 +248,18 @@ class TrueFormatUpmarker:
         densities_at_points, density_field = self.point_density_frequence(points2D=coords.T, debug=False)
         data = numpy.column_stack((data, densities_at_points))
 
-        # Clustering
-        clusterer = hdbscan.HDBSCAN(**kwargs)
-        clusterer.fit(normalized(data[:, features_to_use]))
-        threshold = pandas.Series(clusterer.outlier_scores_).quantile(0.8)
-        outliers = numpy.where(clusterer.outlier_scores_ > threshold)[0]
-
         # Determine number of clusters
         number_columns = self.number_of_columns(density2D=density_field)
+
+        # Clustering
+        clusterer = mixture.GaussianMixture(
+         covariance_type='full', n_components=number_columns )
+        clusterer.fit(normalized(data[:, features_to_use], axis=0))
+
+        #threshold = pandas.Series(clusterer.outlier_scores_).quantile(0.8)
+        #outliers = numpy.where(clusterer.outlier_scores_ > threshold)[0]
+
+
         logging.info(f"detected {number_columns} columns")
         what_clusters = set(clusterer.labels_)
         cluster_counts = Counter([l for l in clusterer.labels_])  # if l>-1])
@@ -261,7 +270,7 @@ class TrueFormatUpmarker:
             logging.info(f"Number of relevant columns {number_columns}")
             logging.info(f"How many content items in columns {str(cluster_counts)}")
 
-            self.debug_pic(clusterer, coords, debug_pic_name, outliers)
+            #self.debug_pic(clusterer, coords, debug_pic_name)
 
             if len(what_clusters) < number_columns:
                 raise ArithmeticError
@@ -305,7 +314,7 @@ class TrueFormatUpmarker:
 
         clusters_dict = {all_divs[features[Page_Features.index_]] :
                                    (abs(cluster_label + 2) / (len(relevant_clusters) + 2))
-                                   if features[Page_Features.index_] not in outliers else 1
+                                   if features[Page_Features.index_]  else 1
                           for page, clusters in page_cluster_lr_groups.items()
                           for cluster_label, cluster in clusters
                           for features in cluster}
@@ -318,7 +327,7 @@ class TrueFormatUpmarker:
 
         return div_reading_sequence, clusters_dict
 
-    def debug_pic(self, clusterer, coords, debug_pic_name, outliers):
+    def debug_pic(self, clusterer, coords, debug_pic_name):
         color_palette = sns.color_palette('deep', 20)
         cluster_colors = [color_palette[x] if x >= 0
                           else (0.5, 0.5, 0.5)
