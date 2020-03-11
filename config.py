@@ -53,3 +53,7 @@ ke_colors="../KnowledgeScience/knowledge_graph_coords/kn_clusters_mean_points.cs
 hal = '"../hal/target/hal-1-jar-with-dependencies.jar"'
 video_dir = '../view_control_web/WebContent/resources/media/'
 
+
+reader_width = 700
+page_margin_bottom = 0.06
+page_margin_top = 0.15

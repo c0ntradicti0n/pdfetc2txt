@@ -17,9 +17,9 @@ def read_actual_corpus():
     yet = []
     relevant_files = list(glob.iglob(config.new_corpus_increment + '/*.conll3'))
     for rf in relevant_files:
-        print (rf)
+        #print (rf)
         annotations.extend(bio_annotation.BIO_Annotation.read_annotation_from_corpus(rf, different_only=True, yet=yet))
-    print (annotations)
+    #print (annotations)
     return annotations
 
 new_tag_open = "<div class='new'>"
