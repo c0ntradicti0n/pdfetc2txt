@@ -1,3 +1,5 @@
+import numpy
+
 scraped_difbet = "scraped_difference_between/"
 parse_pdf2htmlEX = False
 recursive = True
@@ -55,5 +57,7 @@ video_dir = '../view_control_web/WebContent/resources/media/'
 
 
 reader_width = 700
+reader_height = numpy.sqrt(2) * reader_width
+
 page_margin_bottom = 0.06
 page_margin_top = 0.15
