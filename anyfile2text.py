@@ -27,13 +27,11 @@ class paper_reader:
         detecting text by comparing to the letter distribution of normal prose to parts of the text extracted.
     """
     def __init__(self, _threshold = 0.001, _length_limit = 20000):
-        #with open('hamlet.txt', 'r+') as f:
-        #    self.normal_data = list(f.read())
+        with open(config.wordlist, 'r') as f:
+            self.words = [w for w in list(f.readlines()) if len(w) >= 4]
         self.tfu = true_format_html.TrueFormatUpmarker()
-
         self.length_limit = _length_limit
         self.threshold = _threshold
-
         self.normal_data = list(
                                     'used are variants of the predicate calculus. He  even says, Lately '
                                     'those who think  they ought to be so regarded seem to  be winning. '
@@ -53,16 +51,16 @@ class paper_reader:
                                     'interesting general theory. '.lower()
                                 )
 
-    def just_extract_text_from_html(self, adress, ):
+    def just_extract_text_from_html(self, adress, wordlist):
         logging.info(f"extracting text from {adress}")
         try:
             with urlopen(adress).read().decode('utf-8') as fdoc:
                 soup = bs4.BeautifulSoup(fdoc, parent="lxml")
-                return soup.get_text()
+                return self.get_only_real_words(soup.get_text(), wordlist)
         except ValueError:
             with open(adress, "r") as fdoc:
                 soup = bs4.BeautifulSoup(fdoc, features='lxml')
-                return soup.get_text()
+                return self.get_only_real_words(soup.get_text(), wordlist)
 
     def parse_file_format(self, adress):
         if adress.endswith('pdf'):
@@ -77,7 +75,7 @@ class paper_reader:
             self.tfu.convert_and_index( html_path_before, html_path_after)
             os.system(f"cp \"{html_path_after}\" \"{apache_doc_path}\"")
             self.tfu.save_doc_json(json_path)
-            self.text = self.just_extract_text_from_html(html_path_after)
+            self.text = self.just_extract_text_from_html(html_path_after, self.wordlist)
 
             # needed for topic modelling
             with open (txt_path, "w") as f:
@@ -147,3 +145,6 @@ class paper_reader:
                 self.apache_path,
                 self.json_text_extract,
                 self.txt_path)
+
+    def get_only_real_words(self, text, wordlist):
+        return " ".join([word for word in text.split() if word in wordlist])

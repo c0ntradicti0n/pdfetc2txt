@@ -17,8 +17,7 @@ rake = Rake(language_code="en",
 
 class Topicist:
     def __init__(self, directory="docs"):
-        with open(config.wordlist, 'r') as f:
-            self.words = [w for w in list(f.readlines()) if len(w) >= 4]
+
         self.directory = directory
         self.update()
 
