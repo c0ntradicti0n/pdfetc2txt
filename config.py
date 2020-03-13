@@ -4,6 +4,8 @@ scraped_difbet = "scraped_difference_between/"
 parse_pdf2htmlEX = True
 recursive = True
 max_len = 200
+NORMAL_HEIGHT = 100
+INDEX_WRAP_TAG_NAME = 'z'
 
 log_files = {
     "ccapp": "./CorpusCookApp/log.log",

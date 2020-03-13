@@ -64,24 +64,24 @@ class PaperReader:
 
     def parse_file_format(self, adress):
         if adress.endswith('pdf'):
-            html_path_before, html_path_after, apache_doc_path, json_path, txt_path = self.pdfpath2htmlpaths(adress)
+            paths = self.pdfpath2htmlpaths(adress)
             if config.parse_pdf2htmlEX:
                 os.system(f"pdf2htmlEX  "
                           f"--space-as-offset 1  "
                           f"--optimize-text 1 "
                           f"--decompose-ligature 1  "
                           f"--fit-width {config.reader_width}  "
-                          f"\"{adress}\" \"{html_path_before}\"")
-            self.tfu.convert_and_index(html_path_before, html_path_after)
-            os.system(f"cp \"{html_path_after}\" \"{apache_doc_path}\"")
-            self.tfu.save_doc_json(json_path)
-            self.text = self.just_extract_text_from_html(html_path_after)
+                          f"\"{adress}\" \"{paths.html_before_indexing}\"")
+            self.tfu.convert_and_index(paths.html_before_indexing, paths.html_after_indexing)
+            os.system(f"cp \"{paths.html_after_indexing}\" \"{paths.apache_path}\"")
+            self.tfu.save_doc_json(paths.json_path)
+            self.text = " ".join(list(self.tfu.indexed_words.values()))
 
             # needed for topic modelling
-            with open(txt_path, "w") as f:
+            with open(paths.txt_path, "w") as f:
                 f.write(self.text)
-            logging.debug((html_path_before, html_path_after, apache_doc_path, json_path, txt_path))
-
+            logging.debug(paths)
+            self.paths = paths
             time.sleep(2)
 
         logging.info(f"extracted text: {self.text[100:]}")
@@ -125,7 +125,7 @@ class PaperReader:
     DocPaths = namedtuple("DocPaths", ["html_before_indexing",
                                        "html_after_indexing",
                                        "apache_path",
-                                       "json_text_extract",
+                                       "json_path",
                                        "txt_path"])
 
     def pdfpath2htmlpaths(self, adress):
@@ -135,7 +135,7 @@ class PaperReader:
         html_before_indexing = config.appcorpuscook_html_dir + filename + ".html"
         filename = remove_ugly_chars(filename)
         html_after_indexing = config.appcorpuscook_pdf_dir + filename + ".pdf2htmlEX.html"
-        json_text_extract = config.appcorpuscook_json_dir + filename + ".json"
+        json_path = config.appcorpuscook_json_dir + filename + ".json"
         txt_path = config.appcorpuscook_txt_dir + filename + ".txt"
         apache_path = config.apache_dir_document + filename + ".html"
 
@@ -143,11 +143,11 @@ class PaperReader:
             html_before_indexing,
             html_after_indexing,
             apache_path,
-            json_text_extract,
+            json_path,
             txt_path)
 
     def get_only_real_words(self, text, wordlist):
-        return " ".join([word for word in text.split() if word in wordlist])
+        return text #" ".join([word for word in text.split() if word in wordlist])
 
 
 import unittest

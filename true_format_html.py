@@ -45,10 +45,6 @@ def normalized(a, axis=-1, order=2):
     l2[l2 == 0] = 1
     return a / numpy.expand_dims(l2, axis)
 
-
-NORMAL_HEIGHT = 100
-INDEX_WRAP_TAG_NAME = 'z'
-
 algorithms = ['best', 'generic', 'prims_kdtree', 'prims_balltree', 'boruvka_kdtree', 'boruvka_balltree']
 metrics = {'braycurtis': hdbscan.dist_metrics.BrayCurtisDistance,
            'canberra': hdbscan.dist_metrics.CanberraDistance,
@@ -111,7 +107,7 @@ class TrueFormatUpmarker:
         else:
             self.max_bottom = max_bottom
 
-        self.index_wrap_tag_name = INDEX_WRAP_TAG_NAME
+        self.index_wrap_tag_name = config.INDEX_WRAP_TAG_NAME
         delimiters = r" ", r"\n"
         self.splitter = '|'.join(map(regex.escape, delimiters))
 
@@ -121,7 +117,6 @@ class TrueFormatUpmarker:
     def convert_and_index(self, html_path_before, html_path_after):
         logging.warning(f"working on {html_path_before}")
         indexed_words = self.generate_css_tagging_document(html_path_before, html_path_after, "/debug_output")
-
         return indexed_words
 
     def transform(self, pdf_path):
