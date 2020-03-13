@@ -28,7 +28,7 @@ class paper_reader:
     """
     def __init__(self, _threshold = 0.001, _length_limit = 20000):
         with open(config.wordlist, 'r') as f:
-            self.words = [w for w in list(f.readlines()) if len(w) >= 4]
+            self.wordlist = [w for w in list(f.readlines()) if len(w) >= 4]
         self.tfu = true_format_html.TrueFormatUpmarker()
         self.length_limit = _length_limit
         self.threshold = _threshold
