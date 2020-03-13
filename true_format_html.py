@@ -1,25 +1,17 @@
-import io
 import json
 from collections import OrderedDict, Counter, defaultdict
-from enum import Enum
-from pprint import pprint
 import itertools
 from statistics import stdev
 import numpy
 import pandas
-import cv2
 import regex
 from more_itertools.recipes import flatten
 from numpy import mean
-from PIL import Image
 from scipy import stats
 from scipy.signal import find_peaks
-from scipy.stats import ks_2samp
-from sklearn import mixture
-from sklearn.cluster import dbscan, Birch, MiniBatchKMeans
-from sklearn.utils import Memory
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pprint
 
 import config
 from HoughBundler import HoughBundler
@@ -31,7 +23,6 @@ from tinycss.css21 import RuleSet
 import hdbscan
 
 from helpers.str_tools import insert_at_index
-from helpers.list_tools import reverse_dict_of_lists
 
 
 class Page_Features:
@@ -105,8 +96,6 @@ NORMAL_TEXT = list(
 )
 
 
-
-
 class TrueFormatUpmarker:
     def __init__(self, min_bottom=None, max_bottom=None):
         din_rel = numpy.sqrt(2)
@@ -127,7 +116,7 @@ class TrueFormatUpmarker:
         return tag.attrs['class'][3]
 
     def convert_and_index(self, html_path_before, html_path_after):
-        indexed_words = self.load(html_path_before, html_path_after, "/debug_output")
+        indexed_words = self.generate_css_tagging_document(html_path_before, html_path_after, "/debug_output")
         return indexed_words
 
     def transform(self, pdf_path):
@@ -137,56 +126,128 @@ class TrueFormatUpmarker:
         else:
             raise ValueError(f"{pdf_path} must be a pdffile!")
 
-    def load(self, html_before_path, html_after_path, debug_folder):
-        for algorithm in ['boruvka_balltree', 'boruvka_kdtree', 'generic', 'prims']:
-            for metric in ['hamming', 'l1', 'l2', 'hamming', 'infinity', 'p', 'chebyshev', 'cityblock', 'braycurtis', 'euclidean']:
-                file_name = insert_at_index(html_after_path, html_after_path.rfind("/"),
-                                              debug_folder)  + metric + algorithm
+    def generate_css_tagging_document(self, html_before_path, html_after_path, debug_folder, parameterizing=False):
+        """
+        This manipulates an html-file from the result of pdf2htmlEX, that inserts word for word tags with css ids
+        to apply markup to these words only with a css-file, without changing this document again.
 
-                try:
-                    with open(html_before_path, 'r', encoding='utf8') as f:
-                        self.soup = bs4.BeautifulSoup(f.read(), features='html.parser')
+        This has to restore the semantics of the layout, as the reading sequence of left right, top to bottom,
+        column for column, page for page. Other layout things should disappear from the text sequence.
+        """
+        with open(html_before_path, 'r', encoding='utf8') as f:
+            soup = bs4.BeautifulSoup(f.read(), features='lxml')
 
-                    self.css_dict = self.get_css(self.soup)
-                    self.pages_list = list(self.fmr_pages(self.soup))
+        # create data and features for clustering
+        css_dict = self.get_css(soup)
+        all_divs, coords, data, density_field = self.extract_features(soup=soup, css_dict=css_dict)
 
-                    self.sort_divs_in_cols_lefrig_botup, self.clusters_dict = \
-                        self.cluster_and_sort_columns(
-                          [
-                          Page_Features.density,
-                          Page_Features.left,
-                          Page_Features.page_number],
-                          self.pages_list,
-                          self.css_dict,
-                          metric=metric,
-                          algorithm=algorithm,
-                          debug_pic_name=file_name+"_horizontal_",
-                          cluster_selection_epsilon = 0.5,
-                          allow_single_cluster = False,
-                          min_cluster_size = 80,
-                          min_samples = 5,
-                          alpha = 0.99
-                    )
+        if not parameterizing:
+            #e - 0.50, a - 0.69, cs - 188, s - 38
+            self.generate_css_tagging_document_(
+                                               all_divs=all_divs,
+                                               coords=coords,
+                                               data=data,
+                                               density_field=density_field,
+                                               html_before_path=html_before_path,
+                                               parametrerized_file_in_folder=html_after_path,
+                                               algorithm='boruvka_balltree',
+                                               metric='hamming',
+                                               epsilon=0.5,
+                                               alpha=0.69,
+                                               cluster_size=188,
+                                               samples=38
+            )
+        else:
+            range_cluster_selection_epsilon = self.create_eval_range(0.455, sigma=0.1, resolution=0.33)
+            range_min_cluster_size = self.create_eval_range(210, sigma=0.3, resolution=0.33)
+            range_min_samples = self.create_eval_range(36, sigma=0.3, resolution=0.33)
+            range_alpha = self.create_eval_range(0.99, sigma=0.3, resolution=0.33)
 
-                    self.indexed_words         = {}                # reset container for words
-                    self.count_i               = itertools.count() # counter for next indices for  new html-tags
-                    character_splitter = lambda divcontent: TrueFormatUpmarker.tokenize_differential_signs(divcontent)
-                    self.index_words(self.sort_divs_in_cols_lefrig_botup,
-                                     splitter=character_splitter,
-                                     eat_up=False,
-                                     clusters_dict=self.clusters_dict)
+            for epsilon in range_cluster_selection_epsilon:
+                for cluster_size in range_min_cluster_size:
+                    for samples in range_min_samples:
+                        for alpha in range_alpha:
+                            for algorithm in ['boruvka_balltree']: #, 'boruvka_kdtree', 'generic', 'prims']:
+                                for metric in ['hamming']:         #, 'l1', 'l2', 'hamming', 'infinity', 'p', 'chebyshev', 'cityblock', 'braycurtis', 'euclidean']:
 
-                    self.add_text_coverage_markup(self.soup)
+                                    file_in_folder = insert_at_index(html_after_path,
+                                                                     html_after_path.rfind("/"),
+                                                                     debug_folder)
+                                    parametrerized_file_in_folder = insert_at_index(
+                                                                     file_in_folder,
+                                                                     file_in_folder.rfind("/")+1,
+                                                                     f"e-{epsilon:.2f},a-{alpha:.2f},"
+                                                                     f"cs-{int(cluster_size)},s-{int(samples)},"
+                                                                     f"m-{metric},a-{algorithm}")
+                                    self.generate_css_tagging_document_(algorithm=algorithm,
+                                                                        all_divs=all_divs,
+                                                                        alpha=alpha,
+                                                                        cluster_size=cluster_size,
+                                                                        coords=coords,
+                                                                        data=data,
+                                                                        density_field=density_field,
+                                                                        epsilon=epsilon,
+                                                                        html_before_path=html_before_path,
+                                                                        metric=metric,
+                                                                        parametrerized_file_in_folder=parametrerized_file_in_folder,
+                                                                        samples=samples)
 
-                    # change '<' and '>' mail adress of pdf2htmlEX-author, because js thinks, it's a tag
-                    with open(file_name + ".html", "w",
-                              encoding='utf8') as file:
-                        file.write(str(self.soup).replace("<coolwanglu@gmail.com>", "coolwanglu@gmail.com"))
 
-                except Exception as e:
-                    raise #
-                    logging.info(f"plotting failes for {algorithm} {metric}")
-        return None
+
+    def generate_css_tagging_document_(self, algorithm, all_divs, alpha, cluster_size, coords, data, density_field,
+                                       epsilon, html_before_path, metric, parametrerized_file_in_folder, samples):
+
+        try:
+            sort_indices_divs_in_cols_lefrig_botup, indices_clusters_dict = self.fmr_hdbscan(
+                [
+                    Page_Features.left,
+                    Page_Features.density,
+                    Page_Features.line_height
+                ],
+                all_divs, coords, data, density_field,
+                metric=metric,
+                algorithm=algorithm,
+                cluster_selection_method="leaf",
+                debug_pic_name=parametrerized_file_in_folder,
+                cluster_selection_epsilon=float(epsilon),  # ,
+                allow_single_cluster=False,
+                min_cluster_size=int(cluster_size),  # 100,
+                min_samples=int(samples),  # 45,
+                alpha=alpha  # 0.99
+            )
+
+            with open(html_before_path, 'r', encoding='utf8') as f:
+                soup = bs4.BeautifulSoup(f.read(), features='lxml')
+            self.manipulate_document(soup=soup,
+                                     sorting=sort_indices_divs_in_cols_lefrig_botup,
+                                     clusters_dict=indices_clusters_dict,
+                                     )
+
+            # change '<' and '>' mail adress of pdf2htmlEX-author, because js thinks, it's a tag
+            with open(parametrerized_file_in_folder + ".html", "w",
+                      encoding='utf8') as file:
+                file.write(str(soup).replace("<coolwanglu@gmail.com>", "coolwanglu@gmail.com"))
+
+        except Exception as e:
+            # raise #
+            logging.info(f"plotting failes for {algorithm} {metric} because of \n{e}")
+
+    def manipulate_document(self,
+                            soup,
+                            **kwargs
+                            ):
+        self.indexed_words = {}           # reset container for words
+        self.count_i = itertools.count()  # counter for next indices for new html-tags
+        character_splitter = lambda divcontent: TrueFormatUpmarker.tokenize_differential_signs(divcontent)
+        text_divs = self.collect_all_divs(soup)
+
+        self.index_words(soup=soup,
+                         **kwargs,
+                         text_divs=text_divs,
+                         splitter=character_splitter,
+                         eat_up=False,
+                         )
+        self.add_text_coverage_markup(soup)
 
     def get_css(self, soup):
         css_parts = soup.select('style[type="text/css"]')
@@ -209,70 +270,41 @@ class TrueFormatUpmarker:
             return ident, decla
         return None, None
 
-    def cluster_and_sort_columns(self,
-                                 features_to_use,
-                                 pages,
-                                 css_dict,
-                                 debug_pic_name="debug_pics/output.png",
-                                 debug = True,
-                                 **kwargs):
+    def fmr_hdbscan(self,
+                    features_to_use,
+                    all_divs, coords, data, density_field,
+                    debug_pic_name="debug_pics/output.png",
+                    debug = False,
+                    **kwargs):
         """
         hdbscan on font height, x position and y position to recognize all groups of textboxes in different parts of
         the layout as footnotes, text columns, headers etc.
         """
-        logging.info(f"sorting and detecting textboxes with {kwargs['metric']} and {kwargs['algorithm']}")
 
-        # Collect divs (such, that they have an x... attribute, that is generated by pdf2htmlEX
-        page2divs = [page.select('div[class*=x]') for page in pages]
-        all_divs = list(flatten(page2divs))
-
-        # Generate features
-        hs_xs_ys = [list(self.getxyh(tag, css_dict)) for tag in all_divs]
-        text_prob = [[
-            2 + page_number,
-            len(div.text),
-            0]  # ks_2samp(NORMAL_TEXT, list(div.text.lower())).pvalue *100 if div.text else 0]
-            for page_number, divs in enumerate(page2divs) for div in divs]
-        assert (len(hs_xs_ys) == len(text_prob))
-        data = [list(hxy) + tp for hxy, tp in zip(hs_xs_ys, text_prob)]
-
-        # Filter features based on margins
-        data = [pf
-                if pf[Page_Features.bottom] > self.min_bottom
-                and pf[Page_Features.bottom] < self.max_bottom
-                else tuple([0] * 9)
-                for pf in data
-                ]
-        data = numpy.array(data)
-        coords = data.T[[Page_Features.left, Page_Features.bottom]]
-        densities_at_points, density_field = self.point_density_frequence(points2D=coords.T, debug=False)
-        data = numpy.column_stack((data, densities_at_points))
+        # Clustering
+        clusterer = hdbscan.HDBSCAN(**kwargs)
+        clusterer.fit(data[:, features_to_use])
+        threshold = pandas.Series(clusterer.outlier_scores_).quantile(0.85)
+        outliers = numpy.where(clusterer.outlier_scores_ > threshold)[0]
 
         # Determine number of clusters
         number_columns = self.number_of_columns(density2D=density_field)
-
-        # Clustering
-        clusterer = mixture.GaussianMixture(
-         covariance_type='full', n_components=number_columns )
-        clusterer.fit(normalized(data[:, features_to_use], axis=0))
-
-        #threshold = pandas.Series(clusterer.outlier_scores_).quantile(0.8)
-        #outliers = numpy.where(clusterer.outlier_scores_ > threshold)[0]
-
-
         logging.info(f"detected {number_columns} columns")
         what_clusters = set(clusterer.labels_)
-        cluster_counts = Counter([l for l in clusterer.labels_])  # if l>-1])
+        self.take_outliers = number_columns==len(what_clusters)
+        cluster_counts = Counter([l for l in clusterer.labels_ if self.take_outliers or l > -1])
         relevant_clusters = sorted(cluster_counts, key=cluster_counts.get)[-number_columns:]
 
         if debug:
+            logging.info(f"sorting and detecting textboxes with \n{pprint.pformat(kwargs)}")
             logging.info(f"Which clusters are there? {str(what_clusters)}")
             logging.info(f"Number of relevant columns {number_columns}")
             logging.info(f"How many content items in columns {str(cluster_counts)}")
 
-            #self.debug_pic(clusterer, coords, debug_pic_name)
+            self.debug_pic(clusterer, coords, debug_pic_name, outliers)
 
             if len(what_clusters) < number_columns:
+                logging.error("Too few columns found")
                 raise ArithmeticError
 
         # Ordering pages and columns and divs
@@ -307,27 +339,53 @@ class TrueFormatUpmarker:
                 sorted(page_cluster_up_bottom_groups, key=lambda r:
                        min(r[1], key=lambda s: s[Page_Features.left]))
 
-        # clusters_dict = {all_divs[index]: (abs(cluster_label[0] + 2) / (len(cluster2indexlist) + 2)) if index not in outliers else 1
-        #                 for index, cluster_label in reverse_dict_of_lists(cluster2indexlist).items()
-        #                 if cluster_label[0] != -1}
-
-
-        clusters_dict = {all_divs[features[Page_Features.index_]] :
-                                   (abs(cluster_label + 2) / (len(relevant_clusters) + 2))
-                                   if features[Page_Features.index_]  else 1
+        clusters_dict = {features[Page_Features.index_] : cluster_label
                           for page, clusters in page_cluster_lr_groups.items()
                           for cluster_label, cluster in clusters
                           for features in cluster}
 
 
-        div_reading_sequence = [all_divs[features[Page_Features.index_]]
+        div_reading_sequence = [features[Page_Features.index_]
                           for page, clusters in page_cluster_lr_groups.items()
                           for cluster_label, cluster in clusters
                           for features in cluster]
 
         return div_reading_sequence, clusters_dict
 
-    def debug_pic(self, clusterer, coords, debug_pic_name):
+    def extract_features(self, soup, css_dict):
+        # Collect divs (that they have an x... attribute, that is generated by pdf2htmlEX)
+        pages_list = list(self.fmr_pages(soup))
+        page2divs = self.collect_pages_dict(pages_list)
+        all_divs = self.collect_all_divs(soup)
+
+        # Generate positional features
+        hs_xs_ys = [list(self.getxyh(tag, css_dict)) for tag in all_divs]
+        text_prob = [[
+            2 + page_number,
+            len(div.text),
+            0]  # ks_2samp(NORMAL_TEXT, list(div.text.lower())).pvalue *100 if div.text else 0]
+            for page_number, divs in enumerate(page2divs) for div in divs]
+        assert (len(hs_xs_ys) == len(text_prob))
+        data = [list(hxy) + tp for hxy, tp in zip(hs_xs_ys, text_prob)]
+        # Filter features based on margins
+        data = [pf
+                if pf[Page_Features.bottom] > self.min_bottom
+                   and pf[Page_Features.bottom] < self.max_bottom
+                else tuple([0] * 9)
+                for pf in data
+                ]
+        # Density feature from positional features
+        data = numpy.array(data)
+        coords = data.T[[Page_Features.left, Page_Features.bottom]]
+        densities_at_points, density_field = self.point_density_frequence(points2D=coords.T, debug=False)
+        data = numpy.column_stack((data, densities_at_points))
+        return all_divs, coords, data, density_field
+
+    def collect_pages_dict(self, pages):
+        page2divs = [page.select('div[class*=x]') for page in pages]
+        return page2divs
+
+    def debug_pic(self, clusterer, coords, debug_pic_name, outliers):
         color_palette = sns.color_palette('deep', 20)
         cluster_colors = [color_palette[x] if x >= 0
                           else (0.5, 0.5, 0.5)
@@ -351,7 +409,8 @@ class TrueFormatUpmarker:
         sublst = []
         start = 0
         for i, item in enumerate(lst):
-            if not cond(item):
+            if not cond(item                #logging.info("excluding non-main-text" + str(text_div.contents)[:36])
+):
                 sublst.append(item)
             else:
                 yield start, sublst
@@ -372,47 +431,58 @@ class TrueFormatUpmarker:
             intermediate_list = []
             for line in list_of_words:
                 splitted = line.split(d)
-                intermediate_list.extend([e + d if i < len(splitted) - 1 else e
-                                          for i, e in enumerate(line.split(d)) if e])
+                # flattenning double list is done because two things splitted on tokens need
+                # to be splittted into three, token, delimiter, token
+                intermediate_list.extend(flatten([[e, d] if i < len(splitted) - 1 else [e]
+                                          for i, e in enumerate(line.split(d)) if e]))
             list_of_words = intermediate_list
         return list_of_words
 
-    def make_new_tag(self, word, debug_percent):
+    def make_new_tag(self, soup, word, debug_percent):
         p = 1 if debug_percent == 1 else 99
         id = self.count_i.__next__()
-        tag = self.soup.new_tag(self.index_wrap_tag_name, id=f'{INDEX_WRAP_TAG_NAME}{id}',
+        tag = soup.new_tag(self.index_wrap_tag_name, id=f'{INDEX_WRAP_TAG_NAME}{id}',
                                 style=f"color:hsl({int(debug_percent * 360)}, 100%, 50%);")
         tag.append(word)
         return (id, word), tag
 
-    def index_words(self, text_divs, splitter=None, eat_up=True, clusters_dict={}):
+    def index_words(self,
+                    soup, # for generating new tags
+                    text_divs,
+                    sorting,
+                    clusters_dict,
+                    splitter=None,
+                    eat_up=True
+                    ):
         """
             splitter is a function that gives back a list of 2-tuples, that mean the starting index,
             where to replace and list of tokens
         """
-        space = self.soup.new_tag("span", {'class': '_'})
+        space = soup.new_tag("span", {'class': '_'})
         space.append(" ")
 
-        for text_div in text_divs:
-            if text_div not in clusters_dict or clusters_dict[text_div] == 1:
-                #logging.info("excluding non-main-text" + str(text_div.contents)[:36])
+        for div_index, text_div in enumerate(text_divs):
+            if div_index not in clusters_dict or clusters_dict[div_index] == 1:
+                # this happens for the page containers
                 continue
-            debug_percent = clusters_dict[text_div]
+            if not self.take_outliers and clusters_dict[div_index] == -1:
+                # excluding outliers
+                continue
+            debug_percent =  (abs(clusters_dict[div_index] + 2) / (10))
 
             spaces = [tag for tag in text_div.contents if isinstance(tag, Tag) and tag.get_text() == " "]
+
             words = TrueFormatUpmarker.tokenize_differential_signs(text_div.get_text())
+
             if not words or not any(words):
-                logging.info("found an empty text div, excluing")
+                logging.info("found an empty text div, excluding")
                 continue
             text_div.clear()
             css_notes, tagged_words = list(
-                zip(*[self.make_new_tag(word, debug_percent=debug_percent) for word in words if word]))
+                zip(*[self.make_new_tag(soup, word, debug_percent=debug_percent) for word in words if word]))
             for i, tagged_word in enumerate(tagged_words[::-1]):
-                try:
-                    text_div.contents.insert(0, tagged_word)
-                    text_div.contents.insert(0, spaces[i] if i < len(spaces) else space)
-                except:
-                    raise
+                text_div.contents.insert(0, tagged_word)
+                text_div.contents.insert(0, spaces[i] if i < len(spaces) else space)
 
             self.indexed_words.update(dict(css_notes))
 
@@ -526,11 +596,20 @@ class TrueFormatUpmarker:
                 int(config.reader_height * 0.1),
                 int(config.reader_height*0.9),
                 int(config.reader_height*0.05)):
-            peaks, _ = find_peaks(density2D[:, 30], distance=1)
+            peaks, _ = find_peaks(density2D[:, 30], distance=1, prominence=0.0000009)
             peaks_at_height_steps.append(peaks)
         lens = [len(peaks)  for peaks in peaks_at_height_steps]
         counts = Counter(lens)
         return max(counts, key=counts.get)
+
+    def create_eval_range(self, number, sigma=0.5, resolution=0.2):
+        start = number * (1 - sigma)
+        end = number * (1 + sigma)
+        step = (end-start) * resolution
+        return numpy.arange(start, end, step)
+
+    def collect_all_divs(self, soup):
+        return soup.select('div[class*=x]')
 
 
 if __name__ == '__main__':
@@ -558,4 +637,4 @@ if __name__ == '__main__':
 
     for kwargs in docs:
         tfu.convert_and_index(**kwargs)
-        pprint(tfu.get_indexed_words())
+        pprint.pprint(tfu.get_indexed_words())
