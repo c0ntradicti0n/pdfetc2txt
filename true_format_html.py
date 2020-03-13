@@ -1,4 +1,5 @@
 import json
+import os
 from collections import OrderedDict, Counter, defaultdict
 import itertools
 from statistics import stdev
@@ -98,8 +99,9 @@ NORMAL_TEXT = list(
 
 
 class TrueFormatUpmarker:
-    def __init__(self, min_bottom=None, max_bottom=None, debug=False):
+    def __init__(self, min_bottom=None, max_bottom=None, debug=False, parameterize=False):
         self.debug = debug
+        self.parameterize = parameterize
         din_rel = numpy.sqrt(2)
         if not min_bottom:
             self.min_bottom = 0  # config.reader_width * din_rel * config.page_margin_bottom
@@ -120,6 +122,7 @@ class TrueFormatUpmarker:
     def convert_and_index(self, html_path_before, html_path_after):
         logging.warning(f"working on {html_path_before}")
         indexed_words = self.generate_css_tagging_document(html_path_before, html_path_after, "/debug_output")
+
         return indexed_words
 
     def transform(self, pdf_path):
@@ -129,7 +132,7 @@ class TrueFormatUpmarker:
         else:
             raise ValueError(f"{pdf_path} must be a pdffile!")
 
-    def generate_css_tagging_document(self, html_before_path, html_after_path, debug_folder, parameterizing=False):
+    def generate_css_tagging_document(self, html_before_path, html_after_path, debug_folder):
         """
         This manipulates an html-file from the result of pdf2htmlEX, that inserts word for word tags with css ids
         to apply markup to these words only with a css-file, without changing this document again.
@@ -144,7 +147,7 @@ class TrueFormatUpmarker:
         css_dict = self.get_css(soup)
         all_divs, coords, data, density_field = self.extract_features(soup=soup, css_dict=css_dict)
 
-        if not parameterizing:
+        if not self.parameterize:
             # e - 0.50, a - 0.69, cs - 188, s - 38
             self.generate_css_tagging_document_(
                 all_divs=all_divs,
@@ -292,6 +295,7 @@ class TrueFormatUpmarker:
 
         # Determine number of clusters
         number_columns = self.number_of_columns(density2D=density_field)
+        self.number_columns = number_columns
         logging.info(f"Detection of {number_columns} columns")
         what_clusters = set(clusterer.labels_)
         self.take_outliers = number_columns == len(what_clusters)
@@ -546,7 +550,7 @@ class TrueFormatUpmarker:
             logging.info(f"Tag with missing attributes (containing '{tag.contents}'")
             return [0] * 6
 
-        resolution = 50
+        resolution = 10
         hxys = [
             self.get_declaration_value(css_dict[fft], 'line-height'),
             self.get_declaration_value(css_dict[fst], 'font-size'),
@@ -608,7 +612,7 @@ class TrueFormatUpmarker:
                 int(config.reader_height * 0.1),
                 int(config.reader_height * 0.9),
                 int(config.reader_height * 0.05)):
-            peaks, _ = find_peaks(density2D[:, 30], distance=1, prominence=0.0000009)
+            peaks, _ = find_peaks(density2D[:, 30], distance=25, prominence=0.0000009)
             peaks_at_height_steps.append(peaks)
         lens = [len(peaks) for peaks in peaks_at_height_steps]
         counts = Counter(lens)
@@ -624,34 +628,47 @@ class TrueFormatUpmarker:
         return soup.select('div[class*=x]')
 
 
-if __name__ == '__main__':
-    tfu = TrueFormatUpmarker()
-    docs = [
-        {   'html_path_before': 'docs/Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html',
-            'html_path_after': 'docs/Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html.pdf2htmlEX.af.html',
-            'cols':1
-            },
-        {
-            'html_path_before': 'docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.html',
-            'html_path_after': 'docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.pdf2htmlEX.af.html',
-            'cols': 2
-        },
-        {
-            'html_path_before': 'docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
-            'html_path_after': 'docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.af.html',
-            'cols': 3
-        },
-        {
-            'html_path_before': 'docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.html',
-            'html_path_after': 'docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.pdf2htmlEX.af.html',
-            'cols': 2
-        },
-        {
-            'html_path_before': 'docs/HumKno.pdf.html',
-            'html_path_after': 'docs/HumKno.pdf.pdf2htmlEX.af.html',
-            'cols': 1
-        }
-    ]
+import unittest
 
-    for kwargs in docs:
-        tfu.convert_and_index(**kwargs)
+
+class TestPaperReader(unittest.TestCase):
+    tfu = TrueFormatUpmarker(debug=True)
+
+    def test_columns_and_file_existence(self):
+        docs = [
+            {'html_path_before': 'docs/Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html',
+             'html_path_after': 'docs/Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html.pdf2htmlEX.af.html',
+             'cols': 1
+             },
+            {
+                'html_path_before': 'docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.html',
+                'html_path_after': 'docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.pdf2htmlEX.af.html',
+                'cols': 2
+            },
+            {
+                'html_path_before': 'docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
+                'html_path_after': 'docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.af.html',
+                'cols': 3
+            },
+            {
+                'html_path_before': 'docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.html',
+                'html_path_after': 'docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.pdf2htmlEX.af.html',
+                'cols': 2
+            },
+            {
+                'html_path_before': 'docs/HumKno.pdf.html',
+                'html_path_after': 'docs/HumKno.pdf.pdf2htmlEX.af.html',
+                'cols': 1
+            }
+        ]
+
+        for kwargs in docs:
+            columns = kwargs['cols']
+            del kwargs['cols']
+            self.tfu.convert_and_index(**kwargs)
+            assert self.tfu.number_columns == columns
+            assert self.tfu.indexed_words
+            assert os.path.exists(kwargs['html_path_after'])
+
+if __name__ == '__main__':
+    unittest.main()
