@@ -5,7 +5,6 @@ import urllib
 from collections import namedtuple
 from statistics import mean
 from urllib.request import urlopen
-import regex
 import bs4
 import regex as re
 from tika import parser
