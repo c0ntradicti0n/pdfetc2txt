@@ -2,22 +2,23 @@ import logging
 import os
 import time
 import urllib
-from pprint import pprint
 from statistics import mean
 from urllib.request import urlopen
-
-import config
-import true_format_html
+import regex
 import bs4
 import regex as re
 from tika import parser
 from scipy.stats import ks_2samp
 
+import config
+import true_format_html
+
+
 def web_replace(path):
-    return path.replace('.', '_').replace(' ', '_').replace('-', '_')
+    return regex.sub(r"[\n\t:.!@#$%^&*()-=+|\?\/<>,.]", "_", path, regex.MULTILINE)
 
 
-class paper_reader:
+class PaperReader:
     """ multimedial extractor. it reads text from papers in pdfs, urls, html and other things.
 
         Formatting of text makes processing harder, text is cluttered up with remarks of the punlisher on every page,
@@ -51,16 +52,16 @@ class paper_reader:
                                     'interesting general theory. '.lower()
                                 )
 
-    def just_extract_text_from_html(self, adress, wordlist):
+    def just_extract_text_from_html(self, adress):
         logging.info(f"extracting text from {adress}")
         try:
             with urlopen(adress).read().decode('utf-8') as fdoc:
                 soup = bs4.BeautifulSoup(fdoc, parent="lxml")
-                return self.get_only_real_words(soup.get_text(), wordlist)
+                return self.get_only_real_words(soup.get_text(), self.wordlist)
         except ValueError:
             with open(adress, "r") as fdoc:
                 soup = bs4.BeautifulSoup(fdoc, features='lxml')
-                return self.get_only_real_words(soup.get_text(), wordlist)
+                return self.get_only_real_words(soup.get_text(), self.wordlist)
 
     def parse_file_format(self, adress):
         if adress.endswith('pdf'):
@@ -75,25 +76,15 @@ class paper_reader:
             self.tfu.convert_and_index( html_path_before, html_path_after)
             os.system(f"cp \"{html_path_after}\" \"{apache_doc_path}\"")
             self.tfu.save_doc_json(json_path)
-            self.text = self.just_extract_text_from_html(html_path_after, self.wordlist)
+            self.text = self.just_extract_text_from_html(html_path_after)
 
             # needed for topic modelling
             with open (txt_path, "w") as f:
                 f.write(self.text)
             logging.debug( (html_path_before, html_path_after, apache_doc_path, json_path, txt_path) )
 
-            #print (f"THIS IS THE PATH!!! {apache_doc_path}")
-
             time.sleep(2)
 
-        #elif adress.endswith('html'):
-        #    self.text =  self.just_extract_text_from_html(adress)
-        #elif adress.endswith('txt'):
-        #    with open(adress, 'r') as f:
-        #        self.text = f.read()
-        #else:
-        #    logging.info("tika reading text...")
-        #    self.text = parser.from_file(adress)
         logging.info(f"extracted text: {self.text[100:]}")
         return None
 
@@ -148,3 +139,13 @@ class paper_reader:
 
     def get_only_real_words(self, text, wordlist):
         return " ".join([word for word in text.split() if word in wordlist])
+
+
+
+import unittest
+
+class TestStringMethods(unittest.TestCase):
+
+
+if __name__ == '__main__':
+    unittest.main()

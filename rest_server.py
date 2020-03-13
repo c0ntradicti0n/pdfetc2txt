@@ -9,7 +9,7 @@ from regex import regex
 
 from progress_viewer import whats_new
 import config
-from anyfile2text import paper_reader
+from anyfile2text import PaperReader
 from profiler import qprofile
 from webpageparser import WebPageParser
 
@@ -70,7 +70,7 @@ def work_out_file(path):
 
 
 
-reader = paper_reader(_length_limit=40000)
+reader = PaperReader(_length_limit=40000)
 @qprofile
 @app.route("/docload", methods=["POST"])
 def upload():
