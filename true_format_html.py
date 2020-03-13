@@ -39,6 +39,7 @@ class Page_Features:
     label_ = 10
     index_ = 11
 
+
 def normalized(a, axis=-1, order=2):
     l2 = numpy.atleast_1d(numpy.linalg.norm(a, order, axis))
     l2[l2 == 0] = 1
@@ -100,11 +101,11 @@ class TrueFormatUpmarker:
     def __init__(self, min_bottom=None, max_bottom=None):
         din_rel = numpy.sqrt(2)
         if not min_bottom:
-            self.min_bottom = 0 #config.reader_width * din_rel * config.page_margin_bottom
+            self.min_bottom = 0  # config.reader_width * din_rel * config.page_margin_bottom
         else:
             self.min_bottom = min_bottom
         if not max_bottom:
-            self.max_bottom =  config.reader_width * din_rel #* (1- config.page_margin_top)
+            self.max_bottom = config.reader_width * din_rel  # * (1- config.page_margin_top)
         else:
             self.max_bottom = max_bottom
 
@@ -116,6 +117,7 @@ class TrueFormatUpmarker:
         return tag.attrs['class'][3]
 
     def convert_and_index(self, html_path_before, html_path_after):
+        logging.warning(f"working on {html_path_before}")
         indexed_words = self.generate_css_tagging_document(html_path_before, html_path_after, "/debug_output")
         return indexed_words
 
@@ -142,20 +144,20 @@ class TrueFormatUpmarker:
         all_divs, coords, data, density_field = self.extract_features(soup=soup, css_dict=css_dict)
 
         if not parameterizing:
-            #e - 0.50, a - 0.69, cs - 188, s - 38
+            # e - 0.50, a - 0.69, cs - 188, s - 38
             self.generate_css_tagging_document_(
-                                               all_divs=all_divs,
-                                               coords=coords,
-                                               data=data,
-                                               density_field=density_field,
-                                               html_before_path=html_before_path,
-                                               parametrerized_file_in_folder=html_after_path,
-                                               algorithm='boruvka_balltree',
-                                               metric='hamming',
-                                               epsilon=0.5,
-                                               alpha=0.69,
-                                               cluster_size=188,
-                                               samples=38
+                all_divs=all_divs,
+                coords=coords,
+                data=data,
+                density_field=density_field,
+                html_before_path=html_before_path,
+                parametrerized_file_in_folder=html_after_path,
+                algorithm='boruvka_balltree',
+                metric='hamming',
+                epsilon=0.5,
+                alpha=0.69,
+                cluster_size=188,
+                samples=38
             )
         else:
             range_cluster_selection_epsilon = self.create_eval_range(0.455, sigma=0.1, resolution=0.33)
@@ -167,18 +169,19 @@ class TrueFormatUpmarker:
                 for cluster_size in range_min_cluster_size:
                     for samples in range_min_samples:
                         for alpha in range_alpha:
-                            for algorithm in ['boruvka_balltree']: #, 'boruvka_kdtree', 'generic', 'prims']:
-                                for metric in ['hamming']:         #, 'l1', 'l2', 'hamming', 'infinity', 'p', 'chebyshev', 'cityblock', 'braycurtis', 'euclidean']:
+                            for algorithm in ['boruvka_balltree']:  # , 'boruvka_kdtree', 'generic', 'prims']:
+                                for metric in [
+                                    'hamming']:  # , 'l1', 'l2', 'hamming', 'infinity', 'p', 'chebyshev', 'cityblock', 'braycurtis', 'euclidean']:
 
                                     file_in_folder = insert_at_index(html_after_path,
                                                                      html_after_path.rfind("/"),
                                                                      debug_folder)
                                     parametrerized_file_in_folder = insert_at_index(
-                                                                     file_in_folder,
-                                                                     file_in_folder.rfind("/")+1,
-                                                                     f"e-{epsilon:.2f},a-{alpha:.2f},"
-                                                                     f"cs-{int(cluster_size)},s-{int(samples)},"
-                                                                     f"m-{metric},a-{algorithm}")
+                                        file_in_folder,
+                                        file_in_folder.rfind("/") + 1,
+                                        f"e-{epsilon:.2f},a-{alpha:.2f},"
+                                        f"cs-{int(cluster_size)},s-{int(samples)},"
+                                        f"m-{metric},a-{algorithm}")
                                     self.generate_css_tagging_document_(algorithm=algorithm,
                                                                         all_divs=all_divs,
                                                                         alpha=alpha,
@@ -191,8 +194,6 @@ class TrueFormatUpmarker:
                                                                         metric=metric,
                                                                         parametrerized_file_in_folder=parametrerized_file_in_folder,
                                                                         samples=samples)
-
-
 
     def generate_css_tagging_document_(self, algorithm, all_divs, alpha, cluster_size, coords, data, density_field,
                                        epsilon, html_before_path, metric, parametrerized_file_in_folder, samples):
@@ -236,7 +237,7 @@ class TrueFormatUpmarker:
                             soup,
                             **kwargs
                             ):
-        self.indexed_words = {}           # reset container for words
+        self.indexed_words = {}  # reset container for words
         self.count_i = itertools.count()  # counter for next indices for new html-tags
         character_splitter = lambda divcontent: TrueFormatUpmarker.tokenize_differential_signs(divcontent)
         text_divs = self.collect_all_divs(soup)
@@ -274,7 +275,7 @@ class TrueFormatUpmarker:
                     features_to_use,
                     all_divs, coords, data, density_field,
                     debug_pic_name="debug_pics/output.png",
-                    debug = False,
+                    debug=False,
                     **kwargs):
         """
         hdbscan on font height, x position and y position to recognize all groups of textboxes in different parts of
@@ -291,16 +292,16 @@ class TrueFormatUpmarker:
         number_columns = self.number_of_columns(density2D=density_field)
         logging.info(f"detected {number_columns} columns")
         what_clusters = set(clusterer.labels_)
-        self.take_outliers = number_columns==len(what_clusters)
+        self.take_outliers = number_columns == len(what_clusters)
         cluster_counts = Counter([l for l in clusterer.labels_ if self.take_outliers or l > -1])
         relevant_clusters = sorted(cluster_counts, key=cluster_counts.get)[-number_columns:]
 
+        logging.info(f"Which clusters are there? {str(what_clusters)}")
+        logging.info(f"Number of relevant columns {number_columns}")
+        logging.info(f"How many content items in columns {str(cluster_counts)}")
+
         if debug:
             logging.info(f"sorting and detecting textboxes with \n{pprint.pformat(kwargs)}")
-            logging.info(f"Which clusters are there? {str(what_clusters)}")
-            logging.info(f"Number of relevant columns {number_columns}")
-            logging.info(f"How many content items in columns {str(cluster_counts)}")
-
             self.debug_pic(clusterer, coords, debug_pic_name, outliers)
 
             if len(what_clusters) < number_columns:
@@ -330,25 +331,24 @@ class TrueFormatUpmarker:
             groups_of_clusters = itertools.groupby(page_group,
                                                    key=lambda s: s[Page_Features.label_])
             page_cluster_up_bottom_groups = \
-                [ (cluster, sorted(cluster_group,
-                         key=lambda r: r[Page_Features.bottom]))
-                    for cluster, cluster_group in groups_of_clusters
-                    if cluster in relevant_clusters
-                ]
+                [(cluster, sorted(cluster_group,
+                                  key=lambda r: r[Page_Features.bottom]))
+                 for cluster, cluster_group in groups_of_clusters
+                 if cluster in relevant_clusters
+                 ]
             page_cluster_lr_groups[page] = \
                 sorted(page_cluster_up_bottom_groups, key=lambda r:
-                       min(r[1], key=lambda s: s[Page_Features.left]))
+                min(r[1], key=lambda s: s[Page_Features.left]))
 
-        clusters_dict = {features[Page_Features.index_] : cluster_label
-                          for page, clusters in page_cluster_lr_groups.items()
-                          for cluster_label, cluster in clusters
-                          for features in cluster}
-
+        clusters_dict = {features[Page_Features.index_]: cluster_label
+                         for page, clusters in page_cluster_lr_groups.items()
+                         for cluster_label, cluster in clusters
+                         for features in cluster}
 
         div_reading_sequence = [features[Page_Features.index_]
-                          for page, clusters in page_cluster_lr_groups.items()
-                          for cluster_label, cluster in clusters
-                          for features in cluster]
+                                for page, clusters in page_cluster_lr_groups.items()
+                                for cluster_label, cluster in clusters
+                                for features in cluster]
 
         return div_reading_sequence, clusters_dict
 
@@ -393,7 +393,7 @@ class TrueFormatUpmarker:
         cluster_member_colors = [sns.desaturate(x, p) for x, p in
                                  zip(cluster_colors, clusterer.probabilities_)]
         plt.scatter(*list(coords), c=cluster_member_colors, linewidth=0)
-        #plt.scatter(*list(coords[:,outliers].T), linewidth=0, c='red')
+        # plt.scatter(*list(coords[:,outliers].T), linewidth=0, c='red')
         plt.savefig(debug_pic_name + ".png", bbox_inches='tight')
 
     def fmr_pages(self, soup):
@@ -409,8 +409,8 @@ class TrueFormatUpmarker:
         sublst = []
         start = 0
         for i, item in enumerate(lst):
-            if not cond(item                #logging.info("excluding non-main-text" + str(text_div.contents)[:36])
-):
+            if not cond(item  # logging.info("excluding non-main-text" + str(text_div.contents)[:36])
+                        ):
                 sublst.append(item)
             else:
                 yield start, sublst
@@ -434,7 +434,7 @@ class TrueFormatUpmarker:
                 # flattenning double list is done because two things splitted on tokens need
                 # to be splittted into three, token, delimiter, token
                 intermediate_list.extend(flatten([[e, d] if i < len(splitted) - 1 else [e]
-                                          for i, e in enumerate(line.split(d)) if e]))
+                                                  for i, e in enumerate(line.split(d)) if e]))
             list_of_words = intermediate_list
         return list_of_words
 
@@ -442,12 +442,12 @@ class TrueFormatUpmarker:
         p = 1 if debug_percent == 1 else 99
         id = self.count_i.__next__()
         tag = soup.new_tag(self.index_wrap_tag_name, id=f'{INDEX_WRAP_TAG_NAME}{id}',
-                                style=f"color:hsl({int(debug_percent * 360)}, 100%, 50%);")
+                           style=f"color:hsl({int(debug_percent * 360)}, 100%, 50%);")
         tag.append(word)
         return (id, word), tag
 
     def index_words(self,
-                    soup, # for generating new tags
+                    soup,  # for generating new tags
                     text_divs,
                     sorting,
                     clusters_dict,
@@ -468,7 +468,7 @@ class TrueFormatUpmarker:
             if not self.take_outliers and clusters_dict[div_index] == -1:
                 # excluding outliers
                 continue
-            debug_percent =  (abs(clusters_dict[div_index] + 2) / (10))
+            debug_percent = (abs(clusters_dict[div_index] + 2) / (10))
 
             spaces = [tag for tag in text_div.contents if isinstance(tag, Tag) and tag.get_text() == " "]
 
@@ -489,8 +489,6 @@ class TrueFormatUpmarker:
     def get_css_decla_for_tag(self, div, css_dict, css_class, key):
         if isinstance(div, Tag):
             try:
-                #print(self.get_declaration_value(
-                #    css_dict[[attr for attr in div.attrs['class'] if attr.startswith(css_class)][0]], key=key))
                 return self.get_declaration_value(
                     css_dict[[attr for attr in div.attrs['class'] if attr.startswith(css_class)][0]], key=key)
             except:
@@ -521,36 +519,37 @@ class TrueFormatUpmarker:
         with open(json_path, "w", encoding="utf8") as f:
             f.write(json.dumps(doc_dict))
 
-    point_before = (0,0)
+    point_before = (0, 0)
+
     def getxyh(self, tag, css_dict):
         try:
             fft, fst, ht, xt, yt = sorted(attr for attr in tag.attrs['class']
-                                if  attr.startswith('x') or
-                                    attr.startswith('y') or
-                                    attr.startswith('h') or
-                                    attr.startswith('ff') or
-                                    attr.startswith('fs') )
+                                          if attr.startswith('x') or
+                                          attr.startswith('y') or
+                                          attr.startswith('h') or
+                                          attr.startswith('ff') or
+                                          attr.startswith('fs'))
         except ValueError:
             logging.info(f"tag with missing attributes (containing '{tag.contents}'")
             return [0] * 6
 
         resolution = 50
         hxys = [
-                self.get_declaration_value(css_dict[fft], 'line-height'),
-                self.get_declaration_value(css_dict[fst], 'font-size'),
+            self.get_declaration_value(css_dict[fft], 'line-height'),
+            self.get_declaration_value(css_dict[fst], 'font-size'),
 
-                self.get_declaration_value(css_dict[ht], 'height'),
-                self.get_declaration_value(css_dict[xt], 'left'),
-                self.get_declaration_value(css_dict[yt], 'bottom')
-                ]
+            self.get_declaration_value(css_dict[ht], 'height'),
+            self.get_declaration_value(css_dict[xt], 'left'),
+            self.get_declaration_value(css_dict[yt], 'bottom')
+        ]
 
         dist = numpy.sqrt(
-            (hxys[3]-self.point_before[0])**2 \
-               + (hxys[4]-self.point_before[1])**2 )
+            (hxys[3] - self.point_before[0]) ** 2 \
+            + (hxys[4] - self.point_before[1]) ** 2)
         self.point_before = (hxys[3], hxys[4])
-        dist  = int(dist/resolution) * resolution
+        dist = int(dist / resolution) * resolution
         hxys = hxys + [dist]
-        hxys [3] = int(hxys[3]/resolution) * resolution
+        hxys[3] = int(hxys[3] / resolution) * resolution
         return hxys
 
     def add_text_coverage_markup(self, soup):
@@ -568,7 +567,7 @@ class TrueFormatUpmarker:
         xmax = max(x) + deltaX
         ymin = min(y) - deltaY
         ymax = max(y) + deltaY
-        print(xmin, xmax, ymin, ymax)  # Create meshgrid
+
         xx, yy = numpy.mgrid[xmin:xmax:100j, ymin:ymax:100j]
         positions = numpy.vstack([xx.ravel(), yy.ravel()])
         values = numpy.vstack([x, y])
@@ -594,18 +593,18 @@ class TrueFormatUpmarker:
         peaks_at_height_steps = []
         for height in range(
                 int(config.reader_height * 0.1),
-                int(config.reader_height*0.9),
-                int(config.reader_height*0.05)):
+                int(config.reader_height * 0.9),
+                int(config.reader_height * 0.05)):
             peaks, _ = find_peaks(density2D[:, 30], distance=1, prominence=0.0000009)
             peaks_at_height_steps.append(peaks)
-        lens = [len(peaks)  for peaks in peaks_at_height_steps]
+        lens = [len(peaks) for peaks in peaks_at_height_steps]
         counts = Counter(lens)
         return max(counts, key=counts.get)
 
     def create_eval_range(self, number, sigma=0.5, resolution=0.2):
         start = number * (1 - sigma)
         end = number * (1 + sigma)
-        step = (end-start) * resolution
+        step = (end - start) * resolution
         return numpy.arange(start, end, step)
 
     def collect_all_divs(self, soup):
@@ -614,16 +613,15 @@ class TrueFormatUpmarker:
 
 if __name__ == '__main__':
     tfu = TrueFormatUpmarker()
-    # pprint(tfu.convert_and_index(html_path='/home/stefan/cow/pdfetc2txt/docs/0013.html'))
-    # tfu.save_doc_json(json_path='/home/stefan/cow/pdfetc2txt/docs/0013.json')
-
-    # tfu.convert_and_index(html_path='/home/stefan/cow/pdfetc2txt/docs/what is string theory.html')
-    # pprint(tfu.get_indexed_words())
-
-    docs = [{
-        'html_path_before': '/home/stefan/cow/pdfetc2txt/docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
-        'html_path_after' : '/home/stefan/cow/pdfetc2txt/docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.af.html'
-        },
+    docs = [
+        {
+            'html_path_before': '/home/stefan/cow/pdfetc2txt/docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
+            'html_path_after': '/home/stefan/cow/pdfetc2txt/docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.af.html'
+            },
+        {
+            'html_path_before': '/home/stefan/cow/pdfetc2txt/docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.html',
+            'html_path_after': '/home/stefan/cow/pdfetc2txt/docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.pdf2htmlEX.af.html'
+            },
         {
             'html_path_before': '/home/stefan/cow/pdfetc2txt/docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.html',
             'html_path_after': '/home/stefan/cow/pdfetc2txt/docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.pdf2htmlEX.af.html'
@@ -632,9 +630,7 @@ if __name__ == '__main__':
             'html_path_before': '/home/stefan/cow/pdfetc2txt/docs/HumKno.pdf.html',
             'html_path_after': '/home/stefan/cow/pdfetc2txt/docs/HumKno.pdf.pdf2htmlEX.af.html'
         }
-
     ]
 
     for kwargs in docs:
         tfu.convert_and_index(**kwargs)
-        pprint.pprint(tfu.get_indexed_words())
