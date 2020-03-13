@@ -34,10 +34,13 @@ class Topicist:
                 logging.info("New state, making new topics")
         except Exception:
             logging.info ("No state file, generating a state")
-        self.lda_model, self.vis = dariah.topics(directory=self.directory,
-                                   stopwords=100,
-                                    num_topics=8,
-                                    num_iterations=100)
+        try:
+            self.lda_model, self.vis = dariah.topics(directory=self.directory,
+                                       stopwords=100,
+                                        num_topics=8,
+                                        num_iterations=100)
+        except:
+            logging.error("Topic modelling failed because of content in text files")
 
 
 
