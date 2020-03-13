@@ -627,21 +627,29 @@ class TrueFormatUpmarker:
 if __name__ == '__main__':
     tfu = TrueFormatUpmarker()
     docs = [
-        {
-            'html_path_before': '/home/stefan/cow/pdfetc2txt/docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.html',
-            'html_path_after': '/home/stefan/cow/pdfetc2txt/docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.pdf2htmlEX.af.html'
+        {   'html_path_before': 'docs/Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html',
+            'html_path_after': 'docs/Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html.pdf2htmlEX.af.html',
+            'cols':1
             },
         {
-            'html_path_before': '/home/stefan/cow/pdfetc2txt/docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
-            'html_path_after': '/home/stefan/cow/pdfetc2txt/docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.af.html'
-            },
-        {
-            'html_path_before': '/home/stefan/cow/pdfetc2txt/docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.html',
-            'html_path_after': '/home/stefan/cow/pdfetc2txt/docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.pdf2htmlEX.af.html'
+            'html_path_before': 'docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.html',
+            'html_path_after': 'docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.pdf2htmlEX.af.html',
+            'cols': 2
         },
         {
-            'html_path_before': '/home/stefan/cow/pdfetc2txt/docs/HumKno.pdf.html',
-            'html_path_after': '/home/stefan/cow/pdfetc2txt/docs/HumKno.pdf.pdf2htmlEX.af.html'
+            'html_path_before': 'docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
+            'html_path_after': 'docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.af.html',
+            'cols': 3
+        },
+        {
+            'html_path_before': 'docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.html',
+            'html_path_after': 'docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.pdf2htmlEX.af.html',
+            'cols': 2
+        },
+        {
+            'html_path_before': 'docs/HumKno.pdf.html',
+            'html_path_after': 'docs/HumKno.pdf.pdf2htmlEX.af.html',
+            'cols': 1
         }
     ]
 
