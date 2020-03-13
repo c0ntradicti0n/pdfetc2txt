@@ -35,12 +35,16 @@ class Topicist:
                 logging.info("New state, making new topics")
         except Exception:
             logging.info ("No state file, generating a state")
+        try:
+            self.lda_model, self.vis = dariah.topics(directory=self.directory,
+                                       stopwords=100,
+                                        num_topics=8,
+                                        num_iterations=100)
+        except TypeError:
+            logging.error("could not produce topics due to some safe-conversion rule in numpy, "
+                          "used by dariah project")
+            return None
 
-        self.lda_model, self.vis = dariah.topics(directory=self.directory,
-
-                                   stopwords=100,
-                                    num_topics=8,
-                                    num_iterations=100)
 
         print (self.lda_model.topics.iloc[:10, :5])
 
