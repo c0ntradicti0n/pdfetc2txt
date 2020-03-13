@@ -6,6 +6,9 @@ from pprint import pprint
 import os
 import dariah
 from multi_rake import Rake
+
+import config
+
 rake = Rake(language_code="en",
             min_chars=10,
             max_words=2,
@@ -14,6 +17,8 @@ rake = Rake(language_code="en",
 
 class Topicist:
     def __init__(self, directory="docs"):
+        with open(config.wordlist, 'r') as f:
+            self.words = [w for w in list(f.readlines()) if len(w) >= 4]
         self.directory = directory
         self.update()
 
@@ -32,6 +37,7 @@ class Topicist:
             logging.info ("No state file, generating a state")
 
         self.lda_model, self.vis = dariah.topics(directory=self.directory,
+
                                    stopwords=100,
                                     num_topics=8,
                                     num_iterations=100)

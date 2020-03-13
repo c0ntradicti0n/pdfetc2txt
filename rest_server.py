@@ -62,10 +62,8 @@ def work_out_file(path):
     logging.info('Parse file')
     reader.parse_file_format(path)
 
-    logging.debug(f"Put web doc to {reader.apache_path}")
-
     # Starting annotation
-    logging.info("Annotating it: Calling CorpusCookApp to call CorpusCook")
+    logging.info(f"Annotating {path}: Calling CorpusCookApp to call CorpusCook")
     requests.post(url="http://localhost:5000/annotate_certain_json_in_doc_folder",
                   json={'filename': reader.json_text_extract, 'meta': meta})
 

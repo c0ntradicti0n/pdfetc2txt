@@ -406,7 +406,8 @@ class TrueFormatUpmarker:
         try:
             return [decla.value[0].value for decla in declaration if decla.name == key][0]
         except:
-            raise ValueError(f"{key} not in {str(declaration)}")
+            logging.error(f"{key} not in {str(declaration)}")
+            return 0
 
     def seq_split(lst, cond):
         sublst = []

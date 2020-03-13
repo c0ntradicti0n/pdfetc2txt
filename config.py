@@ -55,6 +55,7 @@ ke_colors="../KnowledgeScience/knowledge_graph_coords/kn_clusters_mean_points.cs
 hal = '"../hal/target/hal-1-jar-with-dependencies.jar"'
 video_dir = '../view_control_web/WebContent/resources/media/'
 
+wordlist = '../pdfetc2txt/wordlist.txt'
 
 reader_width = 700
 reader_height = numpy.sqrt(2) * reader_width
