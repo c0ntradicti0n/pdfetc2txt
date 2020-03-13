@@ -98,7 +98,8 @@ NORMAL_TEXT = list(
 
 
 class TrueFormatUpmarker:
-    def __init__(self, min_bottom=None, max_bottom=None):
+    def __init__(self, min_bottom=None, max_bottom=None, debug=False):
+        self.debug = debug
         din_rel = numpy.sqrt(2)
         if not min_bottom:
             self.min_bottom = 0  # config.reader_width * din_rel * config.page_margin_bottom
@@ -248,7 +249,8 @@ class TrueFormatUpmarker:
                          splitter=character_splitter,
                          eat_up=False,
                          )
-        self.add_text_coverage_markup(soup)
+        if self.debug:
+            self.add_text_coverage_markup(soup)
 
     def get_css(self, soup):
         css_parts = soup.select('style[type="text/css"]')
@@ -442,10 +444,13 @@ class TrueFormatUpmarker:
             list_of_words = intermediate_list
         return list_of_words
 
-    def make_new_tag(self, soup, word, debug_percent):
+    def make_new_tag(self, soup, word, debug_percent, **kwargs):
         id = self.count_i.__next__()
+        if self.debug:
+            kwargs.update({"style":f"color:hsl({int(debug_percent * 360)}, 100%, 50%);"})
         tag = soup.new_tag(self.index_wrap_tag_name, id=f"{self.index_wrap_tag_name}{id}",
-                           style=f"color:hsl({int(debug_percent * 360)}, 100%, 50%);")
+                           **kwargs)
+
         tag.append(word)
         return (id, word), tag
 
