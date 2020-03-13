@@ -15,7 +15,6 @@ import seaborn as sns
 import pprint
 
 import config
-from HoughBundler import HoughBundler
 from helpers.color_logger import *
 import bs4
 import tinycss
@@ -234,8 +233,8 @@ class TrueFormatUpmarker:
                 file.write(str(soup).replace("<coolwanglu@gmail.com>", "coolwanglu@gmail.com"))
 
         except Exception as e:
-            # raise #
-            logging.info(f"plotting failes for {algorithm} {metric} because of \n{e}")
+            raise
+            #logging.info(f"plotting failes for {algorithm} {metric} because of \n{e}")
 
     def manipulate_document(self,
                             soup,
@@ -264,8 +263,6 @@ class TrueFormatUpmarker:
             del style_dict[None]
         return style_dict
 
-    houghbundler = HoughBundler(min_distance_to_merge=80, min_angle_to_merge=30)
-
     def css_rule2entry(self, rule):
         if isinstance(rule, RuleSet):
             decla = rule.declarations
@@ -279,7 +276,7 @@ class TrueFormatUpmarker:
     def fmr_hdbscan(self,
                     features_to_use,
                     all_divs, coords, data, density_field,
-                    debug_pic_name="debug_pics/output.png",
+                    debug_pic_name="/debug_pics/output.png",
                     debug=False,
                     **kwargs):
         """
@@ -298,7 +295,15 @@ class TrueFormatUpmarker:
         self.number_columns = number_columns
         logging.info(f"Detection of {number_columns} columns")
         what_clusters = set(clusterer.labels_)
-        self.take_outliers = number_columns == len(what_clusters)
+        if number_columns == len(what_clusters):
+            self.take_outliers = True
+        elif number_columns  < len(what_clusters) * 0.33:
+            logging.warning("found unrealistic number of clusters, so I just take all")
+            self.take_outliers = True
+            clusterer.labels_ = [0]* len(clusterer.labels_)
+        else:
+            self.take_outliers = False
+
         cluster_counts = Counter([l for l in clusterer.labels_ if self.take_outliers or l > -1])
         relevant_clusters = sorted(cluster_counts, key=cluster_counts.get)[-number_columns:]
 
@@ -343,7 +348,7 @@ class TrueFormatUpmarker:
                 [(cluster, sorted(cluster_group,
                                   key=lambda r: r[Page_Features.bottom]))
                  for cluster, cluster_group in groups_of_clusters
-                 if cluster in relevant_clusters
+                 if cluster in relevant_clusters or self.take_outliers
                  ]
             page_cluster_lr_groups[page] = \
                 sorted(page_cluster_up_bottom_groups, key=lambda r:
@@ -550,7 +555,7 @@ class TrueFormatUpmarker:
             logging.info(f"Tag with missing attributes (containing '{tag.contents}'")
             return [0] * 6
 
-        resolution = 10
+        resolution = 50
         hxys = [
             self.get_declaration_value(css_dict[fft], 'line-height'),
             self.get_declaration_value(css_dict[fst], 'font-size'),
@@ -632,32 +637,37 @@ import unittest
 
 
 class TestPaperReader(unittest.TestCase):
-    tfu = TrueFormatUpmarker(debug=True)
+    tfu = TrueFormatUpmarker(debug=True, parameterize=False)
 
     def test_columns_and_file_existence(self):
         docs = [
+            {
+                'html_path_before': 'docs/Sonja Vermeulen - Climate Change and Food Systems.pdf.html',
+                'html_path_after': 'docs/Sonja Vermeulen - Climate Change and Food Systems.pdf.html.pdf2htmlEX.test.html',
+                'cols': 2
+            },
             {'html_path_before': 'docs/Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html',
-             'html_path_after': 'docs/Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html.pdf2htmlEX.af.html',
+             'html_path_after': 'docs/Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html.pdf2htmlEX.test.html',
              'cols': 1
              },
             {
                 'html_path_before': 'docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.html',
-                'html_path_after': 'docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.pdf2htmlEX.af.html',
+                'html_path_after': 'docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.pdf2htmlEX.test.html',
                 'cols': 2
             },
             {
                 'html_path_before': 'docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
-                'html_path_after': 'docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.af.html',
+                'html_path_after': 'docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.test.html',
                 'cols': 3
             },
             {
                 'html_path_before': 'docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.html',
-                'html_path_after': 'docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.pdf2htmlEX.af.html',
+                'html_path_after': 'docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.pdf2htmlEX.test.html',
                 'cols': 2
             },
             {
                 'html_path_before': 'docs/HumKno.pdf.html',
-                'html_path_after': 'docs/HumKno.pdf.pdf2htmlEX.af.html',
+                'html_path_after': 'docs/HumKno.pdf.pdf2htmlEX.test.html',
                 'cols': 1
             }
         ]
