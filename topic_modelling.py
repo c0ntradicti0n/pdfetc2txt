@@ -41,6 +41,7 @@ class Topicist:
                                         num_iterations=100)
         except:
             logging.error("Topic modelling failed because of content in text files")
+            return None
 
 
 
