@@ -86,7 +86,11 @@ class Topicist:
                 yield f.read()
 
     def get_paths(self):
-        return self.headword2doc
+        try:
+            return self.headword2doc
+        except AttributeError:
+            logging.error("No headwords were defined")
+            return {}
 
     def clean_text(self, text):
         allowed_chars = sorted(""" 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz""")
