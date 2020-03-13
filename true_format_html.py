@@ -290,15 +290,18 @@ class TrueFormatUpmarker:
 
         # Determine number of clusters
         number_columns = self.number_of_columns(density2D=density_field)
-        logging.info(f"detected {number_columns} columns")
+        logging.info(f"Detection of {number_columns} columns")
         what_clusters = set(clusterer.labels_)
         self.take_outliers = number_columns == len(what_clusters)
         cluster_counts = Counter([l for l in clusterer.labels_ if self.take_outliers or l > -1])
         relevant_clusters = sorted(cluster_counts, key=cluster_counts.get)[-number_columns:]
 
-        logging.info(f"Which clusters are there? {str(what_clusters)}")
+        logging.info(f"Which clusters are there? {what_clusters}")
         logging.info(f"Number of relevant columns {number_columns}")
-        logging.info(f"How many content items in columns {str(cluster_counts)}")
+        logging.info(f"These are {relevant_clusters}")
+        logging.info(f"How many content items in columns {cluster_counts}")
+        logging.info(f"Unsing outliers also for column, {str(self.take_outliers).lower()}")
+
 
         if debug:
             logging.info(f"sorting and detecting textboxes with \n{pprint.pformat(kwargs)}")
@@ -432,16 +435,15 @@ class TrueFormatUpmarker:
             for line in list_of_words:
                 splitted = line.split(d)
                 # flattenning double list is done because two things splitted on tokens need
-                # to be splittted into three, token, delimiter, token
+                # to be splittted into three: token, delimiter, token
                 intermediate_list.extend(flatten([[e, d] if i < len(splitted) - 1 else [e]
                                                   for i, e in enumerate(line.split(d)) if e]))
             list_of_words = intermediate_list
         return list_of_words
 
     def make_new_tag(self, soup, word, debug_percent):
-        p = 1 if debug_percent == 1 else 99
         id = self.count_i.__next__()
-        tag = soup.new_tag(self.index_wrap_tag_name, id=f'{INDEX_WRAP_TAG_NAME}{id}',
+        tag = soup.new_tag(self.index_wrap_tag_name, id=f"{self.index_wrap_tag_name}{id}",
                            style=f"color:hsl({int(debug_percent * 360)}, 100%, 50%);")
         tag.append(word)
         return (id, word), tag
@@ -462,7 +464,7 @@ class TrueFormatUpmarker:
         space.append(" ")
 
         for div_index, text_div in enumerate(text_divs):
-            if div_index not in clusters_dict or clusters_dict[div_index] == 1:
+            if div_index not in clusters_dict:
                 # this happens for the page containers
                 continue
             if not self.take_outliers and clusters_dict[div_index] == -1:
@@ -472,6 +474,7 @@ class TrueFormatUpmarker:
 
             spaces = [tag for tag in text_div.contents if isinstance(tag, Tag) and tag.get_text() == " "]
 
+            # As side effect the elements of the html soup are wrapped in a new bs4 tag-element
             words = TrueFormatUpmarker.tokenize_differential_signs(text_div.get_text())
 
             if not words or not any(words):
@@ -479,7 +482,11 @@ class TrueFormatUpmarker:
                 continue
             text_div.clear()
             css_notes, tagged_words = list(
-                zip(*[self.make_new_tag(soup, word, debug_percent=debug_percent) for word in words if word]))
+                zip(*[self.make_new_tag(
+                            soup,
+                            word,
+                            debug_percent=debug_percent)
+                      for word in words if word]))
             for i, tagged_word in enumerate(tagged_words[::-1]):
                 text_div.contents.insert(0, tagged_word)
                 text_div.contents.insert(0, spaces[i] if i < len(spaces) else space)
@@ -530,7 +537,7 @@ class TrueFormatUpmarker:
                                           attr.startswith('ff') or
                                           attr.startswith('fs'))
         except ValueError:
-            logging.info(f"tag with missing attributes (containing '{tag.contents}'")
+            logging.info(f"Tag with missing attributes (containing '{tag.contents}'")
             return [0] * 6
 
         resolution = 50
@@ -615,12 +622,12 @@ if __name__ == '__main__':
     tfu = TrueFormatUpmarker()
     docs = [
         {
-            'html_path_before': '/home/stefan/cow/pdfetc2txt/docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
-            'html_path_after': '/home/stefan/cow/pdfetc2txt/docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.af.html'
-            },
-        {
             'html_path_before': '/home/stefan/cow/pdfetc2txt/docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.html',
             'html_path_after': '/home/stefan/cow/pdfetc2txt/docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.pdf2htmlEX.af.html'
+            },
+        {
+            'html_path_before': '/home/stefan/cow/pdfetc2txt/docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
+            'html_path_after': '/home/stefan/cow/pdfetc2txt/docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.af.html'
             },
         {
             'html_path_before': '/home/stefan/cow/pdfetc2txt/docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.html',
