@@ -225,7 +225,7 @@ class TrueFormatUpmarker:
                                      )
 
             # change '<' and '>' mail adress of pdf2htmlEX-author, because js thinks, it's a tag
-            with open(parametrerized_file_in_folder + ".html", "w",
+            with open(parametrerized_file_in_folder, "w",
                       encoding='utf8') as file:
                 file.write(str(soup).replace("<coolwanglu@gmail.com>", "coolwanglu@gmail.com"))
 
