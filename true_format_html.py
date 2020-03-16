@@ -637,6 +637,11 @@ class TestPaperReader(unittest.TestCase):
     def test_columns_and_file_existence(self):
         docs = [
             {
+                'html_path_before': 'docs/Wei Quian - Translating Embeddings for Knowledge Graph Completion with Relation Attention Mechanism.pdf.html',
+                'html_path_after': 'docs/Wei Quian - Translating Embeddings for Knowledge Graph Completion with Relation Attention Mechanism.test.html',
+                'cols': 2
+            },
+            {
                 'html_path_before': 'docs/Sonja Vermeulen - Climate Change and Food Systems.pdf.html',
                 'html_path_after': 'docs/Sonja Vermeulen - Climate Change and Food Systems.pdf.html.pdf2htmlEX.test.html',
                 'cols': 2

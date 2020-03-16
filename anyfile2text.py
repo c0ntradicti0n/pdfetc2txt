@@ -62,8 +62,10 @@ class PaperReader:
                 return self.get_only_real_words(soup.get_text(), self.wordlist)
 
     def parse_file_format(self, adress):
+
         if adress.endswith('pdf'):
             paths = self.pdfpath2htmlpaths(adress)
+
             if config.parse_pdf2htmlEX:
                 os.system(f"pdf2htmlEX  "
                           f"--space-as-offset 1  "
@@ -71,17 +73,25 @@ class PaperReader:
                           f"--decompose-ligature 1  "
                           f"--fit-width {config.reader_width}  "
                           f"\"{adress}\" \"{paths.html_before_indexing}\"")
-            self.tfu.convert_and_index(paths.html_before_indexing, paths.html_after_indexing)
-            os.system(f"cp \"{paths.html_after_indexing}\" \"{paths.apache_path}\"")
-            self.tfu.save_doc_json(paths.json_path)
-            self.text = " ".join(list(self.tfu.indexed_words.values()))
+        elif adress.endswith('html'):
+            paths = self.htmlpath2htmlpaths(adress)
 
-            # needed for topic modelling
-            with open(paths.txt_path, "w") as f:
-                f.write(self.text)
-            logging.debug(paths)
-            self.paths = paths
-            time.sleep(2)
+            logging.warning("trying with html...")
+        else:
+            logging.error(f"File '{adress}' could not be processed")
+            return  None
+
+        self.tfu.convert_and_index(paths.html_before_indexing, paths.html_after_indexing)
+        os.system(f"cp \"{paths.html_after_indexing}\" \"{paths.apache_path}\"")
+        self.tfu.save_doc_json(paths.json_path)
+        self.text = " ".join(list(self.tfu.indexed_words.values()))
+
+        # needed for topic modelling
+        with open(paths.txt_path, "w") as f:
+            f.write(self.text)
+        logging.debug(paths)
+        self.paths = paths
+        time.sleep(2)
 
         logging.info(f"extracted text: {self.text[100:]}")
         return None
@@ -147,6 +157,22 @@ class PaperReader:
 
     def get_only_real_words(self, text, wordlist):
         return text #" ".join([word for word in text.split() if word in wordlist])
+
+    def htmlpath2htmlpaths(self, adress):
+        filename = os.path.basename(adress)
+        html_before_indexing = config.appcorpuscook_diff_dir + filename
+        filename = remove_ugly_chars(filename)
+        html_after_indexing = config.appcorpuscook_diff_dir + filename + ".pdf2htmlEX.html"
+        json_path = config.appcorpuscook_json_dir + filename + ".json"
+        txt_path = config.appcorpuscook_txt_dir + filename + ".txt"
+        apache_path = config.apache_dir_document + filename + ".html"
+
+        return self.DocPaths(
+            html_before_indexing,
+            html_after_indexing,
+            apache_path,
+            json_path,
+            txt_path)
 
 
 import unittest

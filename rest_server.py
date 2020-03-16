@@ -126,6 +126,7 @@ t_docs = topic_modelling.Topicist(directory='docs')
 @app.route("/diff_paths",  methods=['GET', 'POST'])
 def get_topical_paths_diff():
     logging.info("give topic modelled paths for differencebetween")
+    latest_difference_between()
     return json.dumps(t_diff.get_paths())
 
 @app.route("/docs_paths",  methods=['GET', 'POST'])
@@ -151,7 +152,7 @@ def doc_html():
 
 
 wpp = WebPageParser(config.scraped_difbet)
-def latest_difference_between(source=config.scraped_difbet):
+def latest_difference_between(doc_path=config.scraped_difbet):
     logging.info("downloading front page of difference between")
 
     f = urllib.request.urlopen('http://differencebetween.net')
@@ -160,18 +161,15 @@ def latest_difference_between(source=config.scraped_difbet):
     name_box = list(soup.find_all('a', attrs = {'rel':'bookmark'})) [:2]
     for anchor in name_box:
         text_ground_path = anchor['title']
-        text_path = source +  text_ground_path + '.txt'
+        text_path = doc_path + text_ground_path + ".html"
 
         if not os.path.exists(text_path):
             logging.info(f"downloading page for '{anchor['title']}'")
-
-            content = urllib.request.urlopen(anchor['href'])
-            text = wpp.html_to_text(content)
-            logging.info(f"text starts with '{text[:100]}'")
-            with open(text_path, 'w+') as text_file:
-                text_file.write(text)
-            work_out_file(text_ground_path, folder=source)
-            t_diff.update()
+            with urllib.request.urlopen(anchor['href']) as response:
+                html = response.read()
+                with open(text_path, 'w+') as text_file:
+                    text_file.write(html.decode("utf-8"))
+            work_out_file(text_path)
 
 
 @app.route("/diff_paths_list", methods=['GET', 'POST'])
@@ -184,10 +182,10 @@ def difbet_paths():
 
 
 @app.route("/get_diff", methods=['GET', 'POST'])
-def difffs_html():
+def diff_html():
     ''' give file '''
-    logging.info("get difbet html")
-
+    logging.info("get differencebetween document")
+    latest_difference_between()
     if request.method == 'GET':
         path = config.scraped_difbet + os.sep + request.args['path']
         logging.info("give file " + path)

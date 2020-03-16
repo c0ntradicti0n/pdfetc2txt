@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 from glob import iglob
@@ -38,9 +39,10 @@ class WebPageParser:
         clear_soup = BeautifulSoup(clear_html, features="lxml")
         text_with_correct_beginning = clear_soup.text
 
-        correct_end = text_with_correct_beginning.find("About Latest Posts")
+        correct_end = text_with_correct_beginning.find("Latest Posts")
         if correct_end == -1:
-            return None
+            logging.error("Wrong end of post")
+            return text_with_correct_beginning
         text = text_with_correct_beginning[:correct_end]
         text = self.clean_text(text)
         text = "".join([c for c in text if c in self.allowed_chars])
