@@ -1,23 +1,58 @@
 import json
 import urllib
 import os
+from urllib.request import Request
+
 import requests
 from bs4 import BeautifulSoup
 from flask import request
 from flask import Flask
 from regex import regex
 
+from helpers.programming import deprecated
 from progress_viewer import whats_new
 import config
 from anyfile2text import PaperReader
 from profiler import qprofile
-from webpageparser import WebPageParser
 
 app = Flask(__name__)
 import logging
 logging.getLogger().setLevel(logging.INFO)
 
 os.system(". ~/.bashrc")
+
+
+def latest_difference_between(n=10):
+    logging.info("downloading front page of differencebetween")
+
+    req = Request(
+        'https://differencebetween.com',
+        headers={'User-Agent': 'Mozilla/5.0'})
+
+    f = urllib.request.urlopen(req)
+    page = f.read()
+    soup = BeautifulSoup(page, 'html.parser')
+    anchors = list(soup.find_all('a', attrs = {'rel':'bookmark'})) [:n]
+    for anchor in anchors:
+        text_ground_path = anchor.get_text()
+        text_path = config.appcorpuscook_diff_txt_dir + text_ground_path + "_html" + ".txt"
+        html_path = config.appcorpuscook_diff_document_dir + text_ground_path + ".html"
+
+        if not os.path.exists(text_path):
+            logging.info(f"downloading page for '{text_ground_path}'")
+            diffpagereq = Request(
+                anchor['href'],
+                headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(diffpagereq) as response:
+                html = response.read().decode("utf-8")
+                with open(text_path, 'w') as tf:
+                    tf.write(BeautifulSoup(html, features="lxml").body.text)
+                with open(html_path, 'w') as hf:
+                    hf.write(html)
+            work_out_file(html_path)
+
+    t_diff.update()
+
 
 def get_raw_html_doc(path):
     with open(path + ".html", 'r+') as f:
@@ -35,25 +70,9 @@ def get_pdf2htmlEX_doc(path):
     return html.encode()
 
 
-def insert_markedup_js(html, occurrences):
-    tag = "</body"
-    before_end = html.find(tag)
-    html = html[:before_end] + f"""
-<script onload="">
-    function markup() {{
-        console.log("working");
-        mark_what_was_recently_annotated("{"`~`".join(occurrences).replace('"', '')}");
-        }}
-    $(document).ready(markup);
-    $(window).load(markup);
-</script>
-        """ + html[before_end:]
-    html = regex.sub(' +', ' ', html)
-    return html
-
-
 def code_detect_replace(text):
     return text
+
 
 def work_out_file(path):
     meta = {'lorem':"ipsum"}
@@ -80,7 +99,7 @@ def upload():
     os.system(f"rm \"\{filename}\"")
 
     logging.info('File upload to folder')
-    path = config.appcorpuscook_pdf_dir + filename
+    path = config.appcorpuscook_docs_document_dir + filename
     with open(path, 'wb') as f:
         f.write(uploaded_bytes)
 
@@ -98,8 +117,8 @@ def upload():
 @app.route("/recompute_all", methods=["GET"])
 def recompute_all():
     #os.system("rm ../CorpusCook/cache/predictions/*.*")
-    recompute("./docs/")
-    recompute("./scraped_difference_between/")
+    recompute(config.appcorpuscook_docs_document_dir)
+    recompute(config.appcorpuscook_diff_html_dir)
     # Updating topics
     logging.info("Updating topics")
     t_docs.update()
@@ -109,24 +128,25 @@ def recompute(folder):
     files = os.listdir(folder)
     files = [f for f in files if not (f.endswith("html") or f.endswith('txt'))]
     for f in files:
-        work_out_file(config.appcorpuscook_pdf_dir + f)
+        work_out_file(config.appcorpuscook_docs_document_dir + f)
     return ""
 
 
-def get_htmls(folder=config.appcorpuscook_pdf_dir):
+def get_htmls(folder=config.appcorpuscook_docs_document_dir):
     for subdir, dirs, files in os.walk(folder):
         for file in files:
             if file.endswith(".html"):
                 yield file
 
 import topic_modelling
-t_diff = topic_modelling.Topicist(directory='scraped_difference_between')
-t_docs = topic_modelling.Topicist(directory='docs')
+t_diff = topic_modelling.Topicist(directory=config.appcorpuscook_diff_txt_dir)
+latest_difference_between()
+t_docs = topic_modelling.Topicist(directory=config.appcorpuscook_docs_txt_dir)
 
 @app.route("/diff_paths",  methods=['GET', 'POST'])
 def get_topical_paths_diff():
     logging.info("give topic modelled paths for differencebetween")
-    latest_difference_between()
+    print (t_diff.get_paths())
     return json.dumps(t_diff.get_paths())
 
 @app.route("/docs_paths",  methods=['GET', 'POST'])
@@ -136,58 +156,18 @@ def get_topical_paths_docs():
 
 
 @app.route("/get_doc",  methods=['GET', 'POST'])
+@deprecated
 def doc_html():
     ''' give file '''
-    if request.method == 'GET':
-        path = config.appcorpuscook_pdf_dir + os.sep + request.args['path']
-        pdf2htmlEX_path = path + ".pdf2htmlEX.html"
-
-        # parsed with pdf2htmlEX
-        return get_pdf2htmlEX_doc(pdf2htmlEX_path)
-
-        # TODO fallback to TIKA return get_raw_html_doc(path)
-
-    logging.info("no file path given")
     return ""
-
-
-wpp = WebPageParser(config.scraped_difbet)
-def latest_difference_between(doc_path=config.scraped_difbet):
-    logging.info("downloading front page of difference between")
-
-    f = urllib.request.urlopen('http://differencebetween.net')
-    page = f.read()
-    soup = BeautifulSoup(page, 'html.parser')
-    name_box = list(soup.find_all('a', attrs = {'rel':'bookmark'})) [:2]
-    for anchor in name_box:
-        text_ground_path = anchor['title']
-        text_path = doc_path + text_ground_path + ".html"
-
-        if not os.path.exists(text_path):
-            logging.info(f"downloading page for '{anchor['title']}'")
-            with urllib.request.urlopen(anchor['href']) as response:
-                html = response.read()
-                with open(text_path, 'w+') as text_file:
-                    text_file.write(html.decode("utf-8"))
-            work_out_file(text_path)
-
-
-@app.route("/diff_paths_list", methods=['GET', 'POST'])
-def difbet_paths():
-    ''' available files '''
-    latest_difference_between()
-    logging.info("get difbet paths")
-    paths = list(get_htmls(folder=config.scraped_difbet))[:5]
-    return json.dumps(paths)
 
 
 @app.route("/get_diff", methods=['GET', 'POST'])
 def diff_html():
     ''' give file '''
     logging.info("get differencebetween document")
-    latest_difference_between()
     if request.method == 'GET':
-        path = config.scraped_difbet + os.sep + request.args['path']
+        path = config.scraped_differencebetween + os.sep + request.args['path']
         logging.info("give file " + path)
         try:
             return get_raw_html_doc(path)

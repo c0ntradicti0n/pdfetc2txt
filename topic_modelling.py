@@ -3,11 +3,8 @@ import json
 import logging
 from pathlib import Path
 from pprint import pprint
-import os
 import dariah
 from multi_rake import Rake
-
-import config
 
 rake = Rake(language_code="en",
             min_chars=10,
@@ -16,7 +13,7 @@ rake = Rake(language_code="en",
             )
 
 class Topicist:
-    def __init__(self, directory="docs"):
+    def __init__(self, directory):
 
         self.directory = directory
         self.update()
@@ -38,7 +35,7 @@ class Topicist:
             self.lda_model, self.vis = dariah.topics(directory=self.directory,
                                        stopwords=100,
                                         num_topics=8,
-                                        num_iterations=100)
+                                        num_iterations=50)
         except:
             logging.error("Topic modelling failed because of content in text files")
             return None
@@ -102,3 +99,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+

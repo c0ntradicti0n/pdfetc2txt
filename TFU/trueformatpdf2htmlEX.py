@@ -15,6 +15,7 @@ import seaborn as sns
 import pprint
 
 import config
+from TFU.trueformatupmarker import TrueFormatUpmarker
 from helpers.color_logger import *
 import bs4
 import tinycss
@@ -22,6 +23,7 @@ from bs4 import Tag
 from tinycss.css21 import RuleSet
 import hdbscan
 
+from helpers.programming import overrides
 from helpers.str_tools import insert_at_index
 
 
@@ -92,40 +94,7 @@ NORMAL_TEXT = list(
     'sensitization have been described in pool life-'.lower()
 )
 
-
-class TrueFormatUpmarker:
-    def __init__(self, min_bottom=None, max_bottom=None, debug=False, parameterize=False):
-        self.debug = debug
-        self.parameterize = parameterize
-        din_rel = numpy.sqrt(2)
-        if not min_bottom:
-            self.min_bottom = 0  # config.reader_width * din_rel * config.page_margin_bottom
-        else:
-            self.min_bottom = min_bottom
-        if not max_bottom:
-            self.max_bottom = config.reader_width * din_rel  # * (1- config.page_margin_top)
-        else:
-            self.max_bottom = max_bottom
-
-        self.index_wrap_tag_name = config.INDEX_WRAP_TAG_NAME
-        delimiters = r" ", r"\n"
-        self.splitter = '|'.join(map(regex.escape, delimiters))
-
-    def get_pdf2htmlEX_header(tag):
-        return tag.attrs['class'][3]
-
-    def convert_and_index(self, html_path_before, html_path_after):
-        logging.warning(f"working on {html_path_before}")
-        indexed_words = self.generate_css_tagging_document(html_path_before, html_path_after, "/debug_output")
-        return indexed_words
-
-    def transform(self, pdf_path):
-        if pdf_path.endswith(".pdf"):
-            html_path = pdf_path[:-4] + ".html"
-            return html_path
-        else:
-            raise ValueError(f"{pdf_path} must be a pdffile!")
-
+class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
     def generate_css_tagging_document(self, html_before_path, html_after_path, debug_folder):
         """
         This manipulates an html-file from the result of pdf2htmlEX, that inserts word for word tags with css ids
@@ -180,93 +149,63 @@ class TrueFormatUpmarker:
                                         f"e-{epsilon:.2f},a-{alpha:.2f},"
                                         f"cs-{int(cluster_size)},s-{int(samples)},"
                                         f"m-{metric},a-{algorithm}")
-                                    self.generate_css_tagging_document_(algorithm=algorithm,
+
+                                    # Following function is so overbusted with parameters to test all features and to precompute some data for experimenting
+                                    self.generate_css_tagging_document_(# input, output destination to write file in the same form
+                                                                        html_before_path=html_before_path,
+                                                                        parametrerized_file_in_folder=parametrerized_file_in_folder,
+
+                                                                        # precomputed data as input
                                                                         all_divs=all_divs,
+                                                                        data=data,
+                                                                        coords=coords,
+                                                                        density_field=density_field,
+
+                                                                        # clustering parameters
+                                                                        algorithm=algorithm,
                                                                         alpha=alpha,
                                                                         cluster_size=cluster_size,
-                                                                        coords=coords,
-                                                                        data=data,
-                                                                        density_field=density_field,
                                                                         epsilon=epsilon,
-                                                                        html_before_path=html_before_path,
                                                                         metric=metric,
-                                                                        parametrerized_file_in_folder=parametrerized_file_in_folder,
-                                                                        samples=samples)
+                                                                        samples = samples
+                                                                        )
 
     def generate_css_tagging_document_(self, algorithm, all_divs, alpha, cluster_size, coords, data, density_field,
                                        epsilon, html_before_path, metric, parametrerized_file_in_folder, samples):
+        sort_indices_divs_in_cols_lefrig_botup, indices_clusters_dict = self.fmr_hdbscan(
+            [
+                Page_Features.left,
+                Page_Features.density,
+                Page_Features.line_height
+            ],
+            all_divs, coords, data, density_field,
+            metric=metric,
+            algorithm=algorithm,
+            cluster_selection_method="leaf",
+            debug_pic_name=parametrerized_file_in_folder,
+            cluster_selection_epsilon=float(epsilon),  # ,
+            allow_single_cluster=False,
+            min_cluster_size=int(cluster_size),  # 100,
+            min_samples=int(samples),  # 45,
+            alpha=alpha  # 0.99
+        )
 
-        try:
-            sort_indices_divs_in_cols_lefrig_botup, indices_clusters_dict = self.fmr_hdbscan(
-                [
-                    Page_Features.left,
-                    Page_Features.density,
-                    Page_Features.line_height
-                ],
-                all_divs, coords, data, density_field,
-                metric=metric,
-                algorithm=algorithm,
-                cluster_selection_method="leaf",
-                debug_pic_name=parametrerized_file_in_folder,
-                cluster_selection_epsilon=float(epsilon),  # ,
-                allow_single_cluster=False,
-                min_cluster_size=int(cluster_size),  # 100,
-                min_samples=int(samples),  # 45,
-                alpha=alpha  # 0.99
-            )
+        with open(html_before_path, 'r', encoding='utf8') as f:
+            soup = bs4.BeautifulSoup(f.read(), features='lxml')
+        self.manipulate_document(soup=soup,
+                                 sorting=sort_indices_divs_in_cols_lefrig_botup,
+                                 clusters_dict=indices_clusters_dict,
+                                 )
 
-            with open(html_before_path, 'r', encoding='utf8') as f:
-                soup = bs4.BeautifulSoup(f.read(), features='lxml')
-            self.manipulate_document(soup=soup,
-                                     sorting=sort_indices_divs_in_cols_lefrig_botup,
-                                     clusters_dict=indices_clusters_dict,
-                                     )
+        # change '<' and '>' mail adress of pdf2htmlEX-author, because js thinks, it's a tag
+        with open(parametrerized_file_in_folder, "w",
+                  encoding='utf8') as file:
+            file.write(str(soup).replace("<coolwanglu@gmail.com>", "coolwanglu@gmail.com"))
 
-            # change '<' and '>' mail adress of pdf2htmlEX-author, because js thinks, it's a tag
-            with open(parametrerized_file_in_folder, "w",
-                      encoding='utf8') as file:
-                file.write(str(soup).replace("<coolwanglu@gmail.com>", "coolwanglu@gmail.com"))
 
-        except Exception as e:
-            raise
-            #logging.info(f"plotting failes for {algorithm} {metric} because of \n{e}")
+    def fmr_pages(self, soup):
+        return soup.select("div[data-page-no]")
 
-    def manipulate_document(self,
-                            soup,
-                            **kwargs
-                            ):
-        self.indexed_words = {}  # reset container for words
-        self.count_i = itertools.count()  # counter for next indices for new html-tags
-        character_splitter = lambda divcontent: TrueFormatUpmarker.tokenize_differential_signs(divcontent)
-        text_divs = self.collect_all_divs(soup)
-
-        self.index_words(soup=soup,
-                         **kwargs,
-                         text_divs=text_divs,
-                         splitter=character_splitter,
-                         eat_up=False,
-                         )
-        if self.debug:
-            self.add_text_coverage_markup(soup)
-
-    def get_css(self, soup):
-        css_parts = soup.select('style[type="text/css"]')
-        big_css = max(css_parts, key=lambda x: len(x.string))
-        style_rules = tinycss.make_parser().parse_stylesheet(big_css.string, encoding="utf8").rules
-        style_dict = OrderedDict(self.css_rule2entry(rule) for rule in style_rules)
-        if None in style_dict:
-            del style_dict[None]
-        return style_dict
-
-    def css_rule2entry(self, rule):
-        if isinstance(rule, RuleSet):
-            decla = rule.declarations
-            ident = [sel for sel in rule.selector if sel.type == 'IDENT'][0].value
-            if not isinstance(ident, str):
-                logging.info("multi value css found, ignoring")
-                return None, None
-            return ident, decla
-        return None, None
 
     def fmr_hdbscan(self,
                     features_to_use,
@@ -394,6 +333,9 @@ class TrueFormatUpmarker:
         page2divs = [page.select('div[class*=x]') for page in pages]
         return page2divs
 
+    def get_pdf2htmlEX_header(tag):
+        return tag.attrs['class'][3]
+
     def debug_pic(self, clusterer, coords, debug_pic_name, outliers):
         color_palette = sns.color_palette('deep', 20)
         cluster_colors = [color_palette[x] if x >= 0
@@ -404,9 +346,6 @@ class TrueFormatUpmarker:
         plt.scatter(*list(coords), c=cluster_member_colors, linewidth=0)
         # plt.scatter(*list(coords[:,outliers].T), linewidth=0, c='red')
         plt.savefig(debug_pic_name + ".png", bbox_inches='tight')
-
-    def fmr_pages(self, soup):
-        return soup.select("div[data-page-no]")
 
     def get_declaration_value(self, declaration, key):
         try:
@@ -428,80 +367,6 @@ class TrueFormatUpmarker:
                 start = i + 1
         if sublst:
             yield start, sublst
-
-    keep_delims = r""",;.:'()[]{}&!?`/"""
-
-    def tokenize_differential_signs(poss_token):
-        try:
-            list_of_words = poss_token.split(" ")
-        except:
-            raise
-        applying_delims = [d for d in TrueFormatUpmarker.keep_delims if d in poss_token]
-        for d in applying_delims:
-            intermediate_list = []
-            for line in list_of_words:
-                splitted = line.split(d)
-                # flattenning double list is done because two things splitted on tokens need
-                # to be splittted into three: token, delimiter, token
-                intermediate_list.extend(flatten([[e, d] if i < len(splitted) - 1 else [e]
-                                                  for i, e in enumerate(line.split(d)) if e]))
-            list_of_words = intermediate_list
-        return list_of_words
-
-    def make_new_tag(self, soup, word, debug_percent, **kwargs):
-        id = self.count_i.__next__()
-        if self.debug:
-            kwargs.update({"style":f"color:hsl({int(debug_percent * 360)}, 100%, 50%);"})
-        tag = soup.new_tag(self.index_wrap_tag_name, id=f"{self.index_wrap_tag_name}{id}",
-                           **kwargs)
-
-        tag.append(word)
-        return (id, word), tag
-
-    def index_words(self,
-                    soup,  # for generating new tags
-                    text_divs,
-                    sorting,
-                    clusters_dict,
-                    splitter=None,
-                    eat_up=True
-                    ):
-        """
-            splitter is a function that gives back a list of 2-tuples, that mean the starting index,
-            where to replace and list of tokens
-        """
-        space = soup.new_tag("span", {'class': '_'})
-        space.append(" ")
-
-        for div_index, text_div in enumerate(text_divs):
-            if div_index not in clusters_dict:
-                # this happens for the page containers
-                continue
-            if not self.take_outliers and clusters_dict[div_index] == -1:
-                # excluding outliers
-                continue
-            debug_percent = (abs(clusters_dict[div_index] + 2) / (10))
-
-            spaces = [tag for tag in text_div.contents if isinstance(tag, Tag) and tag.get_text() == " "]
-
-            # As side effect the elements of the html soup are wrapped in a new bs4 tag-element
-            words = TrueFormatUpmarker.tokenize_differential_signs(text_div.get_text())
-
-            if not words or not any(words):
-                logging.info("found an empty text div, excluding")
-                continue
-            text_div.clear()
-            css_notes, tagged_words = list(
-                zip(*[self.make_new_tag(
-                            soup,
-                            word,
-                            debug_percent=debug_percent)
-                      for word in words if word]))
-            for i, tagged_word in enumerate(tagged_words[::-1]):
-                text_div.contents.insert(0, tagged_word)
-                text_div.contents.insert(0, spaces[i] if i < len(spaces) else space)
-
-            self.indexed_words.update(dict(css_notes))
 
     def get_css_decla_for_tag(self, div, css_dict, css_class, key):
         if isinstance(div, Tag):
@@ -526,15 +391,6 @@ class TrueFormatUpmarker:
                                                                  'height') >= mid_height - sigma]
         return text_divs_up_to_height
 
-    def get_indexed_words(self):
-        return self.indexed_words
-
-    def save_doc_json(self, json_path):
-        doc_dict = {
-            "text": " ".join(list(self.indexed_words.values())),
-            "indexed_words": self.indexed_words}
-        with open(json_path, "w", encoding="utf8") as f:
-            f.write(json.dumps(doc_dict))
 
     point_before = (0, 0)
 
@@ -568,11 +424,6 @@ class TrueFormatUpmarker:
         hxys = hxys + [dist]
         hxys[3] = int(hxys[3] / resolution) * resolution
         return hxys
-
-    def add_text_coverage_markup(self, soup):
-        z_style = "\nz {background: rgba(0, 0, 0, 1) !important;   font-weight: bold;} "
-        soup.head.append(soup.new_tag('style', type='text/css'))
-        soup.head.style.append(z_style)
 
     def point_density_frequence(self, points2D, debug=True):
         # Extract x and y
@@ -632,7 +483,7 @@ import unittest
 
 
 class TestPaperReader(unittest.TestCase):
-    tfu = TrueFormatUpmarker(debug=True, parameterize=False)
+    tfu_pdf = TrueFormatUpmarkerPdf2HTMLEX(debug=True, parameterize=False)
 
     def test_columns_and_file_existence(self):
         docs = [
@@ -675,9 +526,9 @@ class TestPaperReader(unittest.TestCase):
         for kwargs in docs:
             columns = kwargs['cols']
             del kwargs['cols']
-            self.tfu.convert_and_index(**kwargs)
-            assert self.tfu.number_columns == columns
-            assert self.tfu.indexed_words
+            self.tfu_pdf.convert_and_index(**kwargs)
+            assert self.tfu_pdf.number_columns == columns
+            assert self.tfu_pdf.indexed_words
             assert os.path.exists(kwargs['html_path_after'])
 
 if __name__ == '__main__':

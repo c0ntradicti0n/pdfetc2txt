@@ -11,7 +11,8 @@ from tika import parser
 from scipy.stats import ks_2samp
 
 import config
-import true_format_html
+from TFU.trueformathtml import TrueFormatUpmarkerHTML
+from TFU.trueformatpdf2htmlEX import TrueFormatUpmarkerPdf2HTMLEX
 from helpers.str_tools import remove_ugly_chars
 
 
@@ -28,7 +29,9 @@ class PaperReader:
     def __init__(self, _threshold=0.001, _length_limit=20000):
         with open(config.wordlist, 'r') as f:
             self.wordlist = [w for w in list(f.readlines()) if len(w) >= 4]
-        self.tfu = true_format_html.TrueFormatUpmarker()
+        self.tfu_pdf = TrueFormatUpmarkerPdf2HTMLEX()
+        self.tfu_html = TrueFormatUpmarkerHTML()
+
         self.length_limit = _length_limit
         self.threshold = _threshold
         self.normal_data = list(
@@ -62,7 +65,6 @@ class PaperReader:
                 return self.get_only_real_words(soup.get_text(), self.wordlist)
 
     def parse_file_format(self, adress):
-
         if adress.endswith('pdf'):
             paths = self.pdfpath2htmlpaths(adress)
 
@@ -73,18 +75,20 @@ class PaperReader:
                           f"--decompose-ligature 1  "
                           f"--fit-width {config.reader_width}  "
                           f"\"{adress}\" \"{paths.html_before_indexing}\"")
+            tfu = self.tfu_pdf
         elif adress.endswith('html'):
+            tfu = self.tfu_html
             paths = self.htmlpath2htmlpaths(adress)
-
             logging.warning("trying with html...")
         else:
             logging.error(f"File '{adress}' could not be processed")
             return  None
 
-        self.tfu.convert_and_index(paths.html_before_indexing, paths.html_after_indexing)
+        tfu.convert_and_index(paths.html_before_indexing, paths.html_after_indexing)
+        tfu.save_doc_json(paths.json_path)
         os.system(f"cp \"{paths.html_after_indexing}\" \"{paths.apache_path}\"")
-        self.tfu.save_doc_json(paths.json_path)
-        self.text = " ".join(list(self.tfu.indexed_words.values()))
+        self.text = " ".join(list(tfu.indexed_words.values()))
+
 
         # needed for topic modelling
         with open(paths.txt_path, "w") as f:
@@ -141,11 +145,11 @@ class PaperReader:
         # file_extension = os.path.splitext(adress)[1] keep it, but unused
         # path = os.path.dirname(adress)
         filename = os.path.basename(adress)
-        html_before_indexing = config.appcorpuscook_html_dir + filename + ".html"
+        html_before_indexing = config.appcorpuscook_docs_document_dir + filename + ".html"
         filename = remove_ugly_chars(filename)
-        html_after_indexing = config.appcorpuscook_pdf_dir + filename + ".pdf2htmlEX.html"
-        json_path = config.appcorpuscook_json_dir + filename + ".json"
-        txt_path = config.appcorpuscook_txt_dir + filename + ".txt"
+        html_after_indexing = config.appcorpuscook_docs_document_dir + filename + ".pdf2htmlEX.html"
+        json_path = config.appcorpuscook_docs_json_dir + filename + ".json"
+        txt_path = config.appcorpuscook_docs_txt_dir + filename + ".txt"
         apache_path = config.apache_dir_document + filename + ".html"
 
         return self.DocPaths(
@@ -160,11 +164,11 @@ class PaperReader:
 
     def htmlpath2htmlpaths(self, adress):
         filename = os.path.basename(adress)
-        html_before_indexing = config.appcorpuscook_diff_dir + filename
+        html_before_indexing = config.appcorpuscook_diff_document_dir + filename
         filename = remove_ugly_chars(filename)
-        html_after_indexing = config.appcorpuscook_diff_dir + filename + ".pdf2htmlEX.html"
-        json_path = config.appcorpuscook_json_dir + filename + ".json"
-        txt_path = config.appcorpuscook_txt_dir + filename + ".txt"
+        html_after_indexing = config.appcorpuscook_diff_html_dir + filename + ".pdf2htmlEX.html"
+        json_path = config.appcorpuscook_diff_json_dir + filename + ".json"
+        txt_path = config.appcorpuscook_docs_txt_dir + filename + ".txt"
         apache_path = config.apache_dir_document + filename + ".html"
 
         return self.DocPaths(

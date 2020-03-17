@@ -1,6 +1,5 @@
 import numpy
 
-scraped_difbet = "scraped_difference_between/"
 parse_pdf2htmlEX = True
 recursive = True
 max_len = 200
@@ -18,13 +17,16 @@ cc_corpus_collection_path = "../CorpusCook/manually_annotated/"
 cc_corpus_working_path = "../CorpusCook/server/corpus/"
 dist_corpus_path = "../Distinctiopus4/manual_corpus/"
 
-appcorpuscook_json_dir = "../CorpusCookApp/pdfs/"
-appcorpuscook_html_dir = "../pdfetc2txt/docs/"
-appcorpuscook_pdf_dir  = "../pdfetc2txt/docs/"
-appcorpuscook_txt_dir  = "../pdfetc2txt/docs/"
-appcorpuscook_diff_dir = "../pdfetc2txt/scraped_difference_between/"
-appcorpuscook_diff_dir  = "../pdfetc2txt/scraped_difference_between/"
-appcorpuscook_diff_dir  = "../pdfetc2txt/scraped_difference_between/"
+appcorpuscook_docs_json_dir = "../CorpusCookApp/pdfs/"
+appcorpuscook_docs_html_dir = "../pdfetc2txt/docs/htmls/"
+appcorpuscook_docs_document_dir  = "../pdfetc2txt/docs/pdfs/"
+appcorpuscook_docs_txt_dir  = "../pdfetc2txt/docs/txts/"
+
+appcorpuscook_diff_json_dir = "../CorpusCookApp/htmls/"
+appcorpuscook_diff_html_dir = "../pdfetc2txt/scraped_difference_between/htmls/"
+appcorpuscook_diff_document_dir  = "../pdfetc2txt/scraped_difference_between/download/"
+appcorpuscook_diff_txt_dir  = "../pdfetc2txt/scraped_difference_between/txts/"
+
 apache_dir_document = "../apache-tomcat-9.0.30/webapps/corpuscow/document/"
 apache_css_dir = "../apache-tomcat-9.0.30/webapps/corpuscow/resources/css/document/"
 
