@@ -1,3 +1,4 @@
+zipp
 flask
 tika
 pyaml
