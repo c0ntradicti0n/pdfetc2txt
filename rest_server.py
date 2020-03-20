@@ -22,6 +22,7 @@ logging.getLogger().setLevel(logging.INFO)
 os.system(". ~/.bashrc")
 
 
+
 def latest_difference_between(n=10):
     logging.info("downloading front page of differencebetween")
 
@@ -54,6 +55,13 @@ def latest_difference_between(n=10):
     t_diff.update()
 
 
+import topic_modelling
+t_diff = topic_modelling.Topicist(directory=config.appcorpuscook_diff_txt_dir)
+latest_difference_between()
+t_docs = topic_modelling.Topicist(directory=config.appcorpuscook_docs_txt_dir)
+
+
+@deprecated
 def get_raw_html_doc(path):
     with open(path + ".html", 'r+') as f:
         html = f.read();
@@ -75,7 +83,7 @@ def code_detect_replace(text):
 
 
 def work_out_file(path):
-    meta = {'lorem':"ipsum"}
+    meta = {'bitbtex_data':"not implemented"}
 
     # Parse the file, text is written in the CorpusCookApps document dir
     logging.info('Parse file')
@@ -83,7 +91,7 @@ def work_out_file(path):
 
     # Starting annotation
     logging.info(f"Annotating {path}: Calling CorpusCookApp to call CorpusCook")
-    requests.post(url="http://localhost:5000/annotate_certain_json_in_doc_folder",
+    requests.post(url=f"http://localhost:{config.app_port}/annotate_certain_json_in_doc_folder",
                   json={'filename': reader.paths.json_path, 'meta': meta})
 
 
@@ -93,7 +101,7 @@ reader = PaperReader(_length_limit=40000)
 @qprofile
 @app.route("/docload", methods=["POST"])
 def upload():
-    meta = {'bitbtexdata':"Not implemented yet"}
+    meta = {'bitbtex_data':"not implemented"}
     uploaded_bytes = request.data
     filename = request.args['filename']
     os.system(f"rm \"\{filename}\"")
@@ -138,10 +146,6 @@ def get_htmls(folder=config.appcorpuscook_docs_document_dir):
             if file.endswith(".html"):
                 yield file
 
-import topic_modelling
-t_diff = topic_modelling.Topicist(directory=config.appcorpuscook_diff_txt_dir)
-latest_difference_between()
-t_docs = topic_modelling.Topicist(directory=config.appcorpuscook_docs_txt_dir)
 
 @app.route("/diff_paths",  methods=['GET', 'POST'])
 def get_topical_paths_diff():
@@ -180,12 +184,6 @@ def diff_html():
 ###########################################################################################
 
 if __name__ == '__main__':
-    import logging, logging.config, yaml
-
-    logfile = logging.getLogger('file')
-    logconsole = logging.getLogger('console')
-    logfile.debug("Debug FILE")
-    logconsole.debug("Debug CONSOLE")
-
-    app.run(port=5555, debug=True)
+    app.debug = True
+    app.run(port=config.doc_port, debug=True, use_reloader=False)
 

@@ -2,7 +2,8 @@ import os
 from TFU.trueformatupmarker import TrueFormatUpmarker
 from helpers.color_logger import *
 import bs4
-from bs4 import NavigableString
+from bs4 import NavigableString, Tag
+
 
 class TrueFormatUpmarkerHTML (TrueFormatUpmarker):
     def collect_all_divs(self, soup):
@@ -11,14 +12,15 @@ class TrueFormatUpmarkerHTML (TrueFormatUpmarker):
         self.collect_all_divs_recursive(soup.body)
         return self.text_divs
 
-    def collect_all_divs_recursive(self, soup):
-        for tag in soup.find_all():
-            if any(tag.name.startswith(possible_tag_beginning) for possible_tag_beginning in
-                ["div", "p", "a", "span"]):
-                if isinstance(tag, bs4.element.Tag) and all(isinstance(child, NavigableString) for child in tag.children):
-                    self.text_divs.append(tag)
-                    if self.is_cut(tag):
-                       self.text_divs.append(self.CUT)
+    def collect_all_divs(self, soup):
+        return list(self.collect_all_divs_recursive(soup.body))
+
+    def collect_all_divs_recursive(self, subsoup, reclevel=0):
+        for tag_or_string in subsoup.contents:
+            if isinstance(tag_or_string, NavigableString) and tag_or_string.strip():
+                yield subsoup
+            elif isinstance(tag_or_string, Tag):
+                yield from self.collect_all_divs_recursive(tag_or_string, reclevel=reclevel + 1)
 
     def is_cut(self, tag):
         return tag.name == "p" or (tag.name == "p")

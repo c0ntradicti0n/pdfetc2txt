@@ -1,9 +1,13 @@
-import numpy
-
 parse_pdf2htmlEX = True
 recursive = True
 max_len = 200
 NORMAL_HEIGHT = 100
+
+doc_port        = 5180
+app_port        = 5181
+annotation_port = 5182
+science_port    = 5183
+
 INDEX_WRAP_TAG_NAME = 'z'
 
 log_files = {
@@ -65,6 +69,7 @@ video_dir = '../view_control_web/WebContent/resources/media/'
 wordlist = '../pdfetc2txt/wordlist.txt'
 
 reader_width = 700
+import numpy
 reader_height = numpy.sqrt(2) * reader_width
 
 page_margin_bottom = 0.06

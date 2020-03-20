@@ -186,6 +186,6 @@ class TrueFormatUpmarker(object):
             self.indexed_words.update(dict(css_ids2words))
 
     def collect_all_divs(self, soup):
-        pass
+        raise NotImplementedError
 
 

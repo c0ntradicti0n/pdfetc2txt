@@ -15,6 +15,7 @@ import seaborn as sns
 import pprint
 
 import config
+from Exceptions.ConversionException import EmptyPageConversionError
 from TFU.trueformatupmarker import TrueFormatUpmarker
 from helpers.color_logger import *
 import bs4
@@ -324,7 +325,10 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
                 ]
         # Density feature from positional features
         data = numpy.array(data)
-        coords = data.T[[Page_Features.left, Page_Features.bottom]]
+        try:
+            coords = data.T[[Page_Features.left, Page_Features.bottom]]
+        except IndexError:
+            raise EmptyPageConversionError
         densities_at_points, density_field = self.point_density_frequence(points2D=coords.T, debug=False)
         data = numpy.column_stack((data, densities_at_points))
         return all_divs, coords, data, density_field
