@@ -22,6 +22,9 @@ logging.getLogger().setLevel(logging.INFO)
 os.system(". ~/.bashrc")
 
 
+reader = PaperReader(_length_limit=40000)
+
+
 
 def work_out_file(path):
     meta = {'bitbtex_data':"not implemented"}
@@ -79,7 +82,6 @@ def code_detect_replace(text):
     return text
 
 
-reader = PaperReader(_length_limit=40000)
 @qprofile
 @app.route("/docload", methods=["POST"])
 def upload():
