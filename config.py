@@ -32,7 +32,7 @@ appcorpuscook_diff_document_dir  = "../pdfetc2txt/scraped_difference_between/dow
 appcorpuscook_diff_txt_dir  = "../pdfetc2txt/scraped_difference_between/txts/"
 
 apache_dir_document = "../apache-tomcat-9.0.30/webapps/corpuscow/document/"
-apache_css_dir = "../apache-tomcat-9.0.30/webapps/corpuscow/resources/css/document/"
+apache_css_dir = "../apache-tomcat-9.0.30/webapps/corpuscow/resources/document_css/"
 
 mixer_path = "../CorpusCook/manually_annotated/mix_corpus_from_manual_files.py"
 mixer_working_dir =  "../CorpusCook/"

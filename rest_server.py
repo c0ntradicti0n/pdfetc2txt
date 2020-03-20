@@ -23,6 +23,21 @@ os.system(". ~/.bashrc")
 
 
 
+def work_out_file(path):
+    meta = {'bitbtex_data':"not implemented"}
+
+    # Parse the file, text is written in the CorpusCookApps document dir
+    logging.info('Parse file')
+    reader.parse_file_format(path)
+
+    # Starting annotation
+    logging.info(f"Annotating {path}: Calling CorpusCookApp to call CorpusCook")
+    requests.post(url=f"http://localhost:{config.app_port}/annotate_certain_json_in_doc_folder",
+                  json={'filename': reader.paths.json_path, 'meta': meta})
+
+
+
+
 def latest_difference_between(n=10):
     logging.info("downloading front page of differencebetween")
 
@@ -60,41 +75,8 @@ t_diff = topic_modelling.Topicist(directory=config.appcorpuscook_diff_txt_dir)
 latest_difference_between()
 t_docs = topic_modelling.Topicist(directory=config.appcorpuscook_docs_txt_dir)
 
-
-@deprecated
-def get_raw_html_doc(path):
-    with open(path + ".html", 'r+') as f:
-        html = f.read();
-    occurrences = whats_new(html)
-    html = insert_markedup_js(html, occurrences)
-    return html.encode()
-
-
-def get_pdf2htmlEX_doc(path):
-    with open(path, 'r+') as f:
-        html = f.read();
-    occurrences = whats_new(html)
-    html = insert_markedup_js(html, occurrences)
-    return html.encode()
-
-
 def code_detect_replace(text):
     return text
-
-
-def work_out_file(path):
-    meta = {'bitbtex_data':"not implemented"}
-
-    # Parse the file, text is written in the CorpusCookApps document dir
-    logging.info('Parse file')
-    reader.parse_file_format(path)
-
-    # Starting annotation
-    logging.info(f"Annotating {path}: Calling CorpusCookApp to call CorpusCook")
-    requests.post(url=f"http://localhost:{config.app_port}/annotate_certain_json_in_doc_folder",
-                  json={'filename': reader.paths.json_path, 'meta': meta})
-
-
 
 
 reader = PaperReader(_length_limit=40000)
@@ -167,18 +149,9 @@ def doc_html():
 
 
 @app.route("/get_diff", methods=['GET', 'POST'])
+@deprecated
 def diff_html():
     ''' give file '''
-    logging.info("get differencebetween document")
-    if request.method == 'GET':
-        path = config.scraped_differencebetween + os.sep + request.args['path']
-        logging.info("give file " + path)
-        try:
-            return get_raw_html_doc(path)
-        except FileNotFoundError:
-            logging.info("give file " + path)
-            return ""
-    logging.info("no file path given")
     return ""
 
 
