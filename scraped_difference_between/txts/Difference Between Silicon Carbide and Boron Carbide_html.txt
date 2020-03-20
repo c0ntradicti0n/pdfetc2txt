@@ -1,0 +1,292 @@
+Compare the Difference Between Similar TermsDifference Between 
+@media(max-width: 600px) {
+  .single .header728  {display:none !important; } 
+}
+
+
+
+
+
+(adsbygoogle = window.adsbygoogle || []).push({});
+
+
+Home / Science & Nature / Science / Chemistry / Inorganic Chemistry / Difference Between Silicon Carbide and Boron CarbideDifference Between Silicon Carbide and Boron Carbide
+March 16, 2020 Posted by Madhu 
+ 
+ .arti-top-oct14-resp { width: 320px; height: 100px; }
+.arti-top-ad-div {text-align: center; position: relative; margin-top: 10px; padding: 0 0px;}
+@media(min-width: 600px) { .arti-top-ad-div { float: left; position: relative; margin-top: 5px; padding: 0 10px 10px 0;}   .arti-top-oct14-resp { width: 336px; height: 280px; }  }
+
+
+
+
+
+
+(adsbygoogle = window.adsbygoogle || []).push({});
+
+The key difference between silicon carbide and boron carbide is that silicon carbide has one silicon atom bonded to one carbon atom, whereas boron carbide has four boron atoms bonded to one carbon atom.
+Both silicon carbide and boron carbide are carbon-containing compounds. Both these are very hard material. They have different chemical and physical properties.
+CONTENTS
+1. Overview and Key Difference
+2. What is Silicon Carbide
+3. What is Boron Carbide
+4. Side by Side Comparison – Silicon Carbide vs Boron Carbide in Tabular Form
+5. Summary
+What is Silicon Carbide?
+Silicon carbide is a semiconductor material composed of silicon and carbon atoms. The chemical formula of this compound is SiC. Therefore, it has one silicon atom bonded to one carbon atom via covalent chemical bonding. This material is also called carborundum and it occurs in nature in the form of moissanite, an extremely rare mineral. Therefore, silicon carbide is mostly made as a synthetic material.
+Figure 01: Silicon Carbide
+The molar mass of silicon carbide is 40 g/mol. This material appears as a bluish-black, iridescent crystal structure, but the pure form is colourless. The black colour is due to the presence of iron as an impurity. Moreover, it is insoluble in water but soluble in molten iron and molten alkalis. However, we can find silicon carbide in about 250 crystal forms. This compound shows polymorphism. Here, alpha silicon carbide is the most common and stable form. It forms at very high temperatures and it has a hexagonal crystal structure.
+There are many uses of silicon carbide. Mainly, it is useful as an abrasive and in the production of cutting tools. It is also an important structural material. E.g. in composite armour, in ceramic plated bulletproof vests, high-temperature kilns, etc. In addition, silicon carbide is useful in the manufacture of automobile parts and as semiconductor materials.
+What is Boron Carbide?
+Boron carbide is an extremely hard material composed of boron and carbon atoms. The chemical formula of this compound is B4C. Therefore, it has four boron atoms bonded to a single carbon atom. It is only third to diamond and cubic boron nitride in its hardness. Therefore, it is also called “black diamond”.
+Figure 02: Boron Carbide
+The molar mass of boron carbide is 55.25 g/mol. It appears as a dark grey or black powder or crystal. It is insoluble in water. This material is well-known for its high hardness, the high cross-section for neutron absorption, high stability towards ionizing radiation, etc. Moreover, it has semiconductor properties. For this, the electronic properties of boron carbide are dominated by hopping-type transport. Typically, it is of a p-type semiconductor.
+Boron carbide is a synthetic material. It can be prepared by the reduction of boron trioxide into boron carbide in the presence of carbon. This reaction requires carbon or magnesium as the reducing agent.
+
+
+
+
+
+(adsbygoogle = window.adsbygoogle || []).push({});
+
+What is the Difference Between Silicon Carbide and Boron Carbide?
+The key difference between silicon carbide and boron carbide is that silicon carbide has one silicon atom bonded to one carbon atom whereas boron carbide has four boron atoms bonded to one carbon atom. Silicon carbides are bluish-black crystals while boron carbides are dark grey or black crystals.
+The following infographic summarizes the difference between silicon carbide and boron carbide.
+
+Summary – Silicon Carbide vs Boron Carbide
+Both silicon carbide and boron carbide are carbon-containing compounds. They have different chemical and physical properties. The key difference between silicon carbide and boron carbide is that silicon carbide has one silicon atom bonded to one carbon atom, whereas boron carbide has four boron atoms bonded to one carbon atom.
+Reference:
+1. Bell, Terence. “The Properties and Uses of Silicon Metal.” ThoughtCo, Jan. 31, 2020, Available here.
+2. “Silicon Carbide.” Encyclopædia Britannica, Encyclopædia Britannica, Inc., 28 Aug. 2008, Available here.
+3. “Boron Carbide.” Encyclopædia Britannica, Encyclopædia Britannica, Inc., 14 Apr. 2010, Available here.
+4. “Silicon Carbide.” Wikipedia, Wikimedia Foundation, 8 Mar. 2020, Available here.
+Image Courtesy:
+1. “SiC p1390066” By David Monniaux – (CC BY-SA 3.0) via Commons Wikimedia
+2.”Boron carbide” By Preslav – Own work, (Public Domain) via Commons Wikimedia
+
+
+
+
+
+(adsbygoogle = window.adsbygoogle || []).push({});
+
+
+Related posts:
+
+
+Difference Between Minerals and Crystals
+
+Difference Between Ionising and Non Ionising Radiation
+
+Difference Between Aluminum and Magnesium
+
+Difference Between Ampholyte and Amphoteric
+
+Difference Between Compressed Air and CO2
+
+
+Filed Under: Inorganic Chemistry About the Author:  MadhuMadhu is a graduate in Biological Sciences with BSc (Honours) Degree and currently persuing a Masters Degree in Industrial and Environmental Chemistry. With a mind rooted firmly to basic principals of chemistry and passion for ever evolving field of industrial chemistry, she is keenly interested to be a true companion for those who seek knowledge in the subject of chemistry.
+
+
+Leave a Reply					Cancel reply
+
+
+
+
+
+					document.addEventListener('DOMContentLoaded', function () {
+						var commentForms = document.getElementsByClassName('jetpack_remote_comment');
+						for (var i = 0; i < commentForms.length; i++) {
+							commentForms[i].allowTransparency = false;
+							commentForms[i].scrolling = 'no';
+						}
+					});
+				
+
+
+
+
+
+ 
+
+Featured Posts
+Difference Between Alzheimers and DementiaDifference Between Which and WhatDifference Between To and For in English GrammarDifference Between Then and Than in English Grammar
+ 
+
+
+@media (max-width: 1171px) { .sidead300 { margin-left: -20px; } }
+
+
+
+
+
+(adsbygoogle = window.adsbygoogle || []).push({});
+
+
+You May Like
+Difference Between Strep A and Strep BDifference Between Lubricant Glidant and Anti AdherentDifference Between Prostate Cancer and Testicular CancerDifference Between Samsung Focus S and Focus FlashDifference Between Lagoon and Lake
+ Latest Posts
+
+
+Difference Between Silicon Carbide and Boron Carbide
+
+
+Difference Between Azeotropic and Zeotropic Mixture
+
+
+Difference Between Carbon Black and Activated Carbon
+
+
+Difference Between Coronavirus and SARS
+
+
+Difference Between Ectomorph Mesomorph and Endomorph
+
+
+Difference Between Coronavirus and Influenza
+
+
+
+Home
+Vacancies
+About
+Request Article
+Contact Us
+
+Copyright © 2010-2018 Difference Between. All rights reserved. Terms of Use and Privacy Policy: Legal.
+if (window.addthis_product === undefined) { window.addthis_product = "wpp"; } if (window.wp_product_version === undefined) { window.wp_product_version = "wpp-6.1.4"; } if (window.wp_blog_version === undefined) { window.wp_blog_version = "4.9.13"; } if (window.addthis_share === undefined) { window.addthis_share = {"passthrough":{"twitter":{"via":"diffbw"}}}; } if (window.addthis_config === undefined) { window.addthis_config = {"data_track_clickback":true,"ignore_server_config":true,"ui_atversion":"300"}; } if (window.addthis_layers === undefined) { window.addthis_layers = {}; } if (window.addthis_layers_tools === undefined) { window.addthis_layers_tools = [{"sharetoolbox":{"numPreferredServices":4,"counts":"one","size":"32px","style":"fixed","shareCountThreshold":0,"services":"facebook,twitter,google_plusone_share,pinterest_share,whatsapp,viber,addthis","elements":".addthis_inline_share_toolbox_ect9,.at-above-post,.at-below-post"}}]; } else { window.addthis_layers_tools.push({"sharetoolbox":{"numPreferredServices":4,"counts":"one","size":"32px","style":"fixed","shareCountThreshold":0,"services":"facebook,twitter,google_plusone_share,pinterest_share,whatsapp,viber,addthis","elements":".addthis_inline_share_toolbox_ect9,.at-above-post,.at-below-post"}});  } if (window.addthis_plugin_info === undefined) { window.addthis_plugin_info = {"info_status":"enabled","cms_name":"WordPress","plugin_name":"Share Buttons by AddThis","plugin_version":"6.1.4","plugin_mode":"WordPress","anonymous_profile_id":"wp-23c37a9b1d913f414734e8134f99fbb6","page_info":{"template":"posts","post_type":""},"sharing_enabled_on_post_via_metabox":false}; } 
+                    (function() {
+                      var first_load_interval_id = setInterval(function () {
+                        if (typeof window.addthis !== 'undefined') {
+                          window.clearInterval(first_load_interval_id);
+                          if (typeof window.addthis_layers !== 'undefined' && Object.getOwnPropertyNames(window.addthis_layers).length > 0) {
+                            window.addthis.layers(window.addthis_layers);
+                          }
+                          if (Array.isArray(window.addthis_layers_tools)) {
+                            for (i = 0; i < window.addthis_layers_tools.length; i++) {
+                              window.addthis.layers(window.addthis_layers_tools[i]);
+                            }
+                          }
+                        }
+                     },1000)
+                    }());
+                
+
+
+/* <![CDATA[ */
+var wpcf7 = {"apiSettings":{"root":"https:\/\/www.differencebetween.com\/wp-json\/contact-form-7\/v1","namespace":"contact-form-7\/v1"},"recaptcha":{"messages":{"empty":"Please verify that you are not a robot."}},"cached":"1"};
+/* ]]> */
+
+
+
+
+/* <![CDATA[ */
+var jpibfi_options = {"hover":{"siteTitle":"Compare the Difference Between Similar Terms","image_selector":".jpibfi_container img","disabled_classes":"wp-smiley;nopin","enabled_classes":"pinit","min_image_height":0,"min_image_height_small":0,"min_image_width":0,"min_image_width_small":0,"show_on":"[single]","disable_on":"[front],[home],[page],[archive],[search],[category],127099,127093,127100,127164,127165,127166,127167,127168,144199,144190,144201,144336,144337,144338,144339,144340,144456,144451,144529,144530,144531,144532,144533,144534,144535,144536,144537,144538,144965,144962,144966,144968,144969,145110,145105,145182,145183,145184,145185,145186,145263,145264,145265,145266,145267,146146,146143,146147,146148,146150,146208,146209,146210,146211,146212,147118,147110,147119,147188,147189,147190,147191,147192,147833,147828","show_button":"hover","button_margin_bottom":20,"button_margin_top":20,"button_margin_left":20,"button_margin_right":20,"button_position":"top-left","description_option":["img_title","img_alt","post_title"],"pinLinkedImages":true,"transparency_value":0.2,"pin_image":"default","pin_image_button":"round","pin_image_icon":"circle","pin_image_size":"small","custom_image_url":"","pinImageHeight":43.2,"pinImageWidth":43.2,"scroll_selector":""}};
+/* ]]> */
+
+
+
+/* <![CDATA[ */
+var ratingsL10n = {"plugin_url":"https:\/\/www.differencebetween.com\/wp-content\/plugins\/wp-postratings","ajax_url":"https:\/\/www.differencebetween.com\/wp-admin\/admin-ajax.php","text_wait":"Please rate only 1 item at a time.","image":"stars","image_ext":"gif","max":"5","show_loading":"1","show_fading":"1","custom":"0"};
+var ratings_mouseover_image=new Image();ratings_mouseover_image.src="https://www.differencebetween.com/wp-content/plugins/wp-postratings/images/stars/rating_over.gif";;
+/* ]]> */
+
+
+
+
+
+
+
+
+
+jQuery(document).ready(function($) { $(".ui-tabs").tabs(); });
+
+
+			(function () {
+				var comm_par_el = document.getElementById( 'comment_parent' ),
+					comm_par = ( comm_par_el && comm_par_el.value ) ? comm_par_el.value : '',
+					frame = document.getElementById( 'jetpack_remote_comment' ),
+					tellFrameNewParent;
+
+				tellFrameNewParent = function () {
+					if ( comm_par ) {
+						frame.src = "https://jetpack.wordpress.com/jetpack-comment/?blogid=144246254&postid=153966&comment_registration=0&require_name_email=1&stc_enabled=0&stb_enabled=0&show_avatars=1&avatar_default=mystery&greeting=Leave+a+Reply&greeting_reply=Leave+a+Reply+to+%25s&color_scheme=light&lang=en_US&jetpack_version=6.0.1&sig=d51de15b250959b7d9f277684ed280ed79fafaf3#parent=https%3A%2F%2Fwww.differencebetween.com%2Fdifference-between-silicon-carbide-and-boron-carbide%2F" + '&replytocom=' + parseInt( comm_par, 10 ).toString();
+					} else {
+						frame.src = "https://jetpack.wordpress.com/jetpack-comment/?blogid=144246254&postid=153966&comment_registration=0&require_name_email=1&stc_enabled=0&stb_enabled=0&show_avatars=1&avatar_default=mystery&greeting=Leave+a+Reply&greeting_reply=Leave+a+Reply+to+%25s&color_scheme=light&lang=en_US&jetpack_version=6.0.1&sig=d51de15b250959b7d9f277684ed280ed79fafaf3#parent=https%3A%2F%2Fwww.differencebetween.com%2Fdifference-between-silicon-carbide-and-boron-carbide%2F";
+					}
+				};
+
+				
+				if ( 'undefined' !== typeof addComment ) {
+					addComment._Jetpack_moveForm = addComment.moveForm;
+
+					addComment.moveForm = function ( commId, parentId, respondId, postId ) {
+						var returnValue = addComment._Jetpack_moveForm( commId, parentId, respondId, postId ),
+							cancelClick, cancel;
+
+						if ( false === returnValue ) {
+							cancel = document.getElementById( 'cancel-comment-reply-link' );
+							cancelClick = cancel.onclick;
+							cancel.onclick = function () {
+								var cancelReturn = cancelClick.call( this );
+								if ( false !== cancelReturn ) {
+									return cancelReturn;
+								}
+
+								if ( ! comm_par ) {
+									return cancelReturn;
+								}
+
+								comm_par = 0;
+
+								tellFrameNewParent();
+
+								return cancelReturn;
+							};
+						}
+
+						if ( comm_par == parentId ) {
+							return returnValue;
+						}
+
+						comm_par = parentId;
+
+						tellFrameNewParent();
+
+						return returnValue;
+					};
+				}
+
+				
+				// Do the post message bit after the dom has loaded.
+				document.addEventListener( 'DOMContentLoaded', function () {
+					var iframe_url = "https:\/\/jetpack.wordpress.com";
+					if ( window.postMessage ) {
+						if ( document.addEventListener ) {
+							window.addEventListener( 'message', function ( event ) {
+								var origin = event.origin.replace( /^http:\/\//i, 'https://' );
+								if ( iframe_url.replace( /^http:\/\//i, 'https://' ) !== origin ) {
+									return;
+								}
+								jQuery( frame ).height( event.data );
+							});
+						} else if ( document.attachEvent ) {
+							window.attachEvent( 'message', function ( event ) {
+								var origin = event.origin.replace( /^http:\/\//i, 'https://' );
+								if ( iframe_url.replace( /^http:\/\//i, 'https://' ) !== origin ) {
+									return;
+								}
+								jQuery( frame ).height( event.data );
+							});
+						}
+					}
+				})
+
+			})();
+		
+
+
+	_stq = window._stq || [];
+	_stq.push([ 'view', {v:'ext',j:'1:6.0.1',blog:'144246254',post:'153966',tz:'0',srv:'www.differencebetween.com'} ]);
+	_stq.push([ 'clickTrackerInit', '144246254', '153966' ]);
+

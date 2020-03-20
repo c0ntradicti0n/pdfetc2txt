@@ -181,7 +181,6 @@ def diff_html():
     logging.info("no file path given")
     return ""
 
-###########################################################################################
 
 if __name__ == '__main__':
     app.debug = True

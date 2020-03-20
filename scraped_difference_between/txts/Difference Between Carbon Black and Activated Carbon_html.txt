@@ -1,0 +1,290 @@
+Compare the Difference Between Similar TermsDifference Between 
+@media(max-width: 600px) {
+  .single .header728  {display:none !important; } 
+}
+
+
+
+
+
+(adsbygoogle = window.adsbygoogle || []).push({});
+
+
+Home / Science & Nature / Science / Chemistry / Industrial Chemistry / Difference Between Carbon Black and Activated CarbonDifference Between Carbon Black and Activated Carbon
+March 16, 2020 Posted by Madhu 
+ 
+ .arti-top-oct14-resp { width: 320px; height: 100px; }
+.arti-top-ad-div {text-align: center; position: relative; margin-top: 10px; padding: 0 0px;}
+@media(min-width: 600px) { .arti-top-ad-div { float: left; position: relative; margin-top: 5px; padding: 0 10px 10px 0;}   .arti-top-oct14-resp { width: 336px; height: 280px; }  }
+
+
+
+
+
+
+(adsbygoogle = window.adsbygoogle || []).push({});
+
+The key difference between carbon black and activated carbon is that the surface-area-to-volume ratio of carbon black is lower than that of activated carbon. 
+Both carbon black and activated carbon are important materials as adsorbing agents. They have a high surface area compared to their volume, which allows the substance to absorb as much as it can. We call them paracrystalline carbon compounds.
+CONTENTS
+1. Overview and Key Difference
+2. What is Carbon Black 
+3. What is Activated Carbon
+4. Side by Side Comparison – Carbon Black vs Activated Carbon in Tabular Form
+5. Summary
+What is Carbon Black?
+Carbon black is an adsorbing agent that forms from the incomplete combustion of heavy petroleum products. There are a few subtypes of carbon black, including acetylene black, channel black, furnace black, lamp black, and thermal black. The heavy petroleum products that can be used as sources for the production of carbon black are FCC tar, coal tar, ethylene cracking tar, etc. Anyhow, this material should not be confused with soot.
+Figure 01: Carbon Black
+Carbon black contains only carbon atoms. It appears as a black powder. Practically, this powder is insoluble in water. The molar mass of carbon black is 12 g/mol. All types of carbon black have chemisorbed oxygen complexes. E.g. carboxylic, quinonic, lactonic, etc. These complexes are on the surface of carbon black particles. Depending on the conditions and manufacturing steps, the degree of these complexes on particle surface differs. These surface compounds are considered as volatile species. Besides, carbon black is a non-conductive material due to its volatile content.
+Moreover, there are many applications of carbon black. It is mainly an important reinforcing material. It is used as a reinforcing filler for tires and other rubber products. In addition, it is used as a colour pigment in paint, plastics, ink, etc. The carbon black that has a vegetable origin are useful as food colouring agents.
+What is Activated Carbon?
+Activated carbon is an adsorbing agent that is derived from charcoal. Therefore, it is also called an activated or active charcoal. This material is made of carbon atoms and it has a very high surface-area-to-volume ratio. It contains low volume pores that increase the surface area of the substance, allowing it to adsorb materials as much as it can.
+Figure 02: Activated Carbon
+There are many uses of activated carbon. It is useful in methane and hydrogen gas storage, air purification due to its adsorption ability, solvent recovery, decaffeination, gold purification, metal extraction, treating poisoning and overdose conditions, stationary phase for chromatographic separation techniques, etc.
+
+
+
+
+
+(adsbygoogle = window.adsbygoogle || []).push({});
+
+What is the Difference Between Carbon Black and Activated Carbon?
+The key difference between carbon black and activated carbon is that the surface-area-to-volume ratio of carbon black is lower than that of activated carbon. We call them paracrystalline carbon compounds. Besides, carbon black is produced from incomplete combustion of heavy petroleum products while activated carbon is produced from charcoal.
+Below infographic summarizes the difference between carbon black and activated carbon.
+
+Summary – Carbon Black vs Activated Carbon
+Both carbon black and activated carbon are important as adsorbing agents. The key difference between carbon black and activated carbon is that the surface-area-to-volume ratio of carbon black is lower than that of activated carbon. We call them as paracrystalline carbon compounds.
+Reference:
+1. “Carbon Black.” Carbon Black – an Overview | ScienceDirect Topics, Available here.
+2. “Carbon Black.” Wikipedia, Wikimedia Foundation, 16 Dec. 2019, Available here.
+3. “Activated Carbon.” Wikipedia, Wikimedia Foundation, 6 Mar. 2020, Available here.
+Image Courtesy:
+1. “Carbon black” By FK1954 – Own work, Public Domain) via Commons Wikimedia
+2. “Activated Carbon” By Self (en:User:Ravedave) – Self (en:User:Ravedave) (CC BY 2.5) via Commons Wikimedia
+
+
+
+
+
+(adsbygoogle = window.adsbygoogle || []).push({});
+
+
+Related posts:
+
+
+Difference Between Gas and Petrol
+
+Difference Between Methylated Spirits and Mineral Turpentine
+
+Difference Between Inconel 625 and 825
+
+Difference Between Thermo Steel and Stainless Steel
+
+Difference Between Hydraulic Fluid and Hydraulic Oil
+
+
+Filed Under: Industrial Chemistry About the Author:  MadhuMadhu is a graduate in Biological Sciences with BSc (Honours) Degree and currently persuing a Masters Degree in Industrial and Environmental Chemistry. With a mind rooted firmly to basic principals of chemistry and passion for ever evolving field of industrial chemistry, she is keenly interested to be a true companion for those who seek knowledge in the subject of chemistry.
+
+
+Leave a Reply					Cancel reply
+
+
+
+
+
+					document.addEventListener('DOMContentLoaded', function () {
+						var commentForms = document.getElementsByClassName('jetpack_remote_comment');
+						for (var i = 0; i < commentForms.length; i++) {
+							commentForms[i].allowTransparency = false;
+							commentForms[i].scrolling = 'no';
+						}
+					});
+				
+
+
+
+
+
+ 
+
+Featured Posts
+Difference Between Alzheimers and DementiaDifference Between Which and WhatDifference Between To and For in English GrammarDifference Between Then and Than in English Grammar
+ 
+
+
+@media (max-width: 1171px) { .sidead300 { margin-left: -20px; } }
+
+
+
+
+
+(adsbygoogle = window.adsbygoogle || []).push({});
+
+
+You May Like
+Difference Between Lung Volume and Lung CapacityDifference Between Surname and First NameDifference Between iPhone 4S and Galaxy S2 (Galaxy S II)Difference Between Data Mining and Machine LearningDifference Between Henna and Mehndi
+ Latest Posts
+
+
+Difference Between Silicon Carbide and Boron Carbide
+
+
+Difference Between Azeotropic and Zeotropic Mixture
+
+
+Difference Between Carbon Black and Activated Carbon
+
+
+Difference Between Coronavirus and SARS
+
+
+Difference Between Ectomorph Mesomorph and Endomorph
+
+
+Difference Between Coronavirus and Influenza
+
+
+
+Home
+Vacancies
+About
+Request Article
+Contact Us
+
+Copyright © 2010-2018 Difference Between. All rights reserved. Terms of Use and Privacy Policy: Legal.
+if (window.addthis_product === undefined) { window.addthis_product = "wpp"; } if (window.wp_product_version === undefined) { window.wp_product_version = "wpp-6.1.4"; } if (window.wp_blog_version === undefined) { window.wp_blog_version = "4.9.13"; } if (window.addthis_share === undefined) { window.addthis_share = {"passthrough":{"twitter":{"via":"diffbw"}}}; } if (window.addthis_config === undefined) { window.addthis_config = {"data_track_clickback":true,"ignore_server_config":true,"ui_atversion":"300"}; } if (window.addthis_layers === undefined) { window.addthis_layers = {}; } if (window.addthis_layers_tools === undefined) { window.addthis_layers_tools = [{"sharetoolbox":{"numPreferredServices":4,"counts":"one","size":"32px","style":"fixed","shareCountThreshold":0,"services":"facebook,twitter,google_plusone_share,pinterest_share,whatsapp,viber,addthis","elements":".addthis_inline_share_toolbox_ect9,.at-above-post,.at-below-post"}}]; } else { window.addthis_layers_tools.push({"sharetoolbox":{"numPreferredServices":4,"counts":"one","size":"32px","style":"fixed","shareCountThreshold":0,"services":"facebook,twitter,google_plusone_share,pinterest_share,whatsapp,viber,addthis","elements":".addthis_inline_share_toolbox_ect9,.at-above-post,.at-below-post"}});  } if (window.addthis_plugin_info === undefined) { window.addthis_plugin_info = {"info_status":"enabled","cms_name":"WordPress","plugin_name":"Share Buttons by AddThis","plugin_version":"6.1.4","plugin_mode":"WordPress","anonymous_profile_id":"wp-23c37a9b1d913f414734e8134f99fbb6","page_info":{"template":"posts","post_type":""},"sharing_enabled_on_post_via_metabox":false}; } 
+                    (function() {
+                      var first_load_interval_id = setInterval(function () {
+                        if (typeof window.addthis !== 'undefined') {
+                          window.clearInterval(first_load_interval_id);
+                          if (typeof window.addthis_layers !== 'undefined' && Object.getOwnPropertyNames(window.addthis_layers).length > 0) {
+                            window.addthis.layers(window.addthis_layers);
+                          }
+                          if (Array.isArray(window.addthis_layers_tools)) {
+                            for (i = 0; i < window.addthis_layers_tools.length; i++) {
+                              window.addthis.layers(window.addthis_layers_tools[i]);
+                            }
+                          }
+                        }
+                     },1000)
+                    }());
+                
+
+
+/* <![CDATA[ */
+var wpcf7 = {"apiSettings":{"root":"https:\/\/www.differencebetween.com\/wp-json\/contact-form-7\/v1","namespace":"contact-form-7\/v1"},"recaptcha":{"messages":{"empty":"Please verify that you are not a robot."}},"cached":"1"};
+/* ]]> */
+
+
+
+
+/* <![CDATA[ */
+var jpibfi_options = {"hover":{"siteTitle":"Compare the Difference Between Similar Terms","image_selector":".jpibfi_container img","disabled_classes":"wp-smiley;nopin","enabled_classes":"pinit","min_image_height":0,"min_image_height_small":0,"min_image_width":0,"min_image_width_small":0,"show_on":"[single]","disable_on":"[front],[home],[page],[archive],[search],[category],127099,127093,127100,127164,127165,127166,127167,127168,144199,144190,144201,144336,144337,144338,144339,144340,144456,144451,144529,144530,144531,144532,144533,144534,144535,144536,144537,144538,144965,144962,144966,144968,144969,145110,145105,145182,145183,145184,145185,145186,145263,145264,145265,145266,145267,146146,146143,146147,146148,146150,146208,146209,146210,146211,146212,147118,147110,147119,147188,147189,147190,147191,147192,147833,147828","show_button":"hover","button_margin_bottom":20,"button_margin_top":20,"button_margin_left":20,"button_margin_right":20,"button_position":"top-left","description_option":["img_title","img_alt","post_title"],"pinLinkedImages":true,"transparency_value":0.2,"pin_image":"default","pin_image_button":"round","pin_image_icon":"circle","pin_image_size":"small","custom_image_url":"","pinImageHeight":43.2,"pinImageWidth":43.2,"scroll_selector":""}};
+/* ]]> */
+
+
+
+/* <![CDATA[ */
+var ratingsL10n = {"plugin_url":"https:\/\/www.differencebetween.com\/wp-content\/plugins\/wp-postratings","ajax_url":"https:\/\/www.differencebetween.com\/wp-admin\/admin-ajax.php","text_wait":"Please rate only 1 item at a time.","image":"stars","image_ext":"gif","max":"5","show_loading":"1","show_fading":"1","custom":"0"};
+var ratings_mouseover_image=new Image();ratings_mouseover_image.src="https://www.differencebetween.com/wp-content/plugins/wp-postratings/images/stars/rating_over.gif";;
+/* ]]> */
+
+
+
+
+
+
+
+
+
+jQuery(document).ready(function($) { $(".ui-tabs").tabs(); });
+
+
+			(function () {
+				var comm_par_el = document.getElementById( 'comment_parent' ),
+					comm_par = ( comm_par_el && comm_par_el.value ) ? comm_par_el.value : '',
+					frame = document.getElementById( 'jetpack_remote_comment' ),
+					tellFrameNewParent;
+
+				tellFrameNewParent = function () {
+					if ( comm_par ) {
+						frame.src = "https://jetpack.wordpress.com/jetpack-comment/?blogid=144246254&postid=153973&comment_registration=0&require_name_email=1&stc_enabled=0&stb_enabled=0&show_avatars=1&avatar_default=mystery&greeting=Leave+a+Reply&greeting_reply=Leave+a+Reply+to+%25s&color_scheme=light&lang=en_US&jetpack_version=6.0.1&sig=0c1a03634810ef925cfdc764cd1a987494588502#parent=https%3A%2F%2Fwww.differencebetween.com%2Fdifference-between-carbon-black-and-activated-carbon%2F" + '&replytocom=' + parseInt( comm_par, 10 ).toString();
+					} else {
+						frame.src = "https://jetpack.wordpress.com/jetpack-comment/?blogid=144246254&postid=153973&comment_registration=0&require_name_email=1&stc_enabled=0&stb_enabled=0&show_avatars=1&avatar_default=mystery&greeting=Leave+a+Reply&greeting_reply=Leave+a+Reply+to+%25s&color_scheme=light&lang=en_US&jetpack_version=6.0.1&sig=0c1a03634810ef925cfdc764cd1a987494588502#parent=https%3A%2F%2Fwww.differencebetween.com%2Fdifference-between-carbon-black-and-activated-carbon%2F";
+					}
+				};
+
+				
+				if ( 'undefined' !== typeof addComment ) {
+					addComment._Jetpack_moveForm = addComment.moveForm;
+
+					addComment.moveForm = function ( commId, parentId, respondId, postId ) {
+						var returnValue = addComment._Jetpack_moveForm( commId, parentId, respondId, postId ),
+							cancelClick, cancel;
+
+						if ( false === returnValue ) {
+							cancel = document.getElementById( 'cancel-comment-reply-link' );
+							cancelClick = cancel.onclick;
+							cancel.onclick = function () {
+								var cancelReturn = cancelClick.call( this );
+								if ( false !== cancelReturn ) {
+									return cancelReturn;
+								}
+
+								if ( ! comm_par ) {
+									return cancelReturn;
+								}
+
+								comm_par = 0;
+
+								tellFrameNewParent();
+
+								return cancelReturn;
+							};
+						}
+
+						if ( comm_par == parentId ) {
+							return returnValue;
+						}
+
+						comm_par = parentId;
+
+						tellFrameNewParent();
+
+						return returnValue;
+					};
+				}
+
+				
+				// Do the post message bit after the dom has loaded.
+				document.addEventListener( 'DOMContentLoaded', function () {
+					var iframe_url = "https:\/\/jetpack.wordpress.com";
+					if ( window.postMessage ) {
+						if ( document.addEventListener ) {
+							window.addEventListener( 'message', function ( event ) {
+								var origin = event.origin.replace( /^http:\/\//i, 'https://' );
+								if ( iframe_url.replace( /^http:\/\//i, 'https://' ) !== origin ) {
+									return;
+								}
+								jQuery( frame ).height( event.data );
+							});
+						} else if ( document.attachEvent ) {
+							window.attachEvent( 'message', function ( event ) {
+								var origin = event.origin.replace( /^http:\/\//i, 'https://' );
+								if ( iframe_url.replace( /^http:\/\//i, 'https://' ) !== origin ) {
+									return;
+								}
+								jQuery( frame ).height( event.data );
+							});
+						}
+					}
+				})
+
+			})();
+		
+
+
+	_stq = window._stq || [];
+	_stq.push([ 'view', {v:'ext',j:'1:6.0.1',blog:'144246254',post:'153973',tz:'0',srv:'www.differencebetween.com'} ]);
+	_stq.push([ 'clickTrackerInit', '144246254', '153973' ]);
+
