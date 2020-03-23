@@ -3,9 +3,13 @@ import os
 from collections import OrderedDict, Counter, defaultdict
 import itertools
 from statistics import stdev
+
+import more_itertools
 import numpy
 import pandas
 import regex
+import scipy
+from fastkde import fastKDE
 from more_itertools.recipes import flatten
 from numpy import mean
 from scipy import stats
@@ -13,6 +17,8 @@ from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pprint
+
+from scipy.stats import norm
 
 import config
 from Exceptions.ConversionException import EmptyPageConversionError
@@ -327,10 +333,14 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         data = numpy.array(data)
         try:
             coords = data.T[[Page_Features.left, Page_Features.bottom]]
+            page_coords = data.T[[Page_Features.page_number, Page_Features.left, Page_Features.bottom]].T
+            page_2_coords  = numpy.split(page_coords[:, 1:], numpy.cumsum(numpy.unique(page_coords[:, 0], return_counts=True)[1])[:-1])
         except IndexError:
             raise EmptyPageConversionError
-        densities_at_points, density_field = self.point_density_frequence(points2D=coords.T, debug=False)
+        densities_at_points, density_field, margin_mask = self.point_density_frequence_per_page(page_2_coords, debug=True)
+
         data = numpy.column_stack((data, densities_at_points))
+        #return all_divs[margin_mask], coords[margin_mask], data[margin_mask], density_field
         return all_divs, coords, data, density_field
 
     def collect_pages_dict(self, pages):
@@ -410,7 +420,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
             logging.info(f"Tag with missing attributes (containing '{tag.contents}'")
             return [0] * 6
 
-        resolution = 50
+        resolution = 1
         hxys = [
             self.get_declaration_value(css_dict[fft], 'line-height'),
             self.get_declaration_value(css_dict[fst], 'font-size'),
@@ -429,45 +439,34 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         hxys[3] = int(hxys[3] / resolution) * resolution
         return hxys
 
+    def point_density_frequence_per_page (self, pages_2_points, **kwargs):
+        coords_densities, fields, margin_masks = list(zip(*[self.point_density_frequence(points2D=points2D, **kwargs) for points2D in pages_2_points]))
+        return numpy.hstack(coords_densities), sum(f for i, f in enumerate(fields) if margin_masks[i])/len(margin_masks), numpy.hstack(margin_masks)
+
+    edges = numpy.array(
+        [[0, 0], [0, config.reader_height], [config.reader_width, 0], [config.reader_width, config.reader_height]])
+
     def point_density_frequence(self, points2D, debug=True):
-        # Extract x and y
-        x = points2D[:, 0]
-        y = points2D[:, 1]  # Define the borders
-        deltaX = (max(x) - min(x)) / 10
-        deltaY = (max(y) - min(y)) / 10
-        xmin = min(x) - deltaX
-        xmax = max(x) + deltaX
-        ymin = min(y) - deltaY
-        ymax = max(y) + deltaY
+        edges_and_points = numpy.vstack((points2D, self.edges))
+        kde = fastKDE.fastKDE(edges_and_points.T, beVerbose=True)
+        f = kde.pdf
+        f = f * 1 / sum(sum(f))  # normalize f, that it's 1 in sum
 
-        xx, yy = numpy.mgrid[xmin:xmax:100j, ymin:ymax:100j]
-        positions = numpy.vstack([xx.ravel(), yy.ravel()])
-        values = numpy.vstack([x, y])
-        kernel = stats.gaussian_kde(values)
-        f = numpy.reshape(kernel(positions).T, xx.shape)
+        #if debug:
+        #    plt.contour(v1, v2, f)
+        #    plt.show()
 
-        if debug:
-            fig = plt.figure(figsize=(8, 8))
-            ax = fig.gca()
-            ax.set_xlim(xmin, xmax)
-            ax.set_ylim(ymin, ymax)
-            cfset = ax.contourf(xx, yy, f, cmap='coolwarm')
-            ax.imshow(numpy.rot90(f), cmap='coolwarm', extent=[xmin, xmax, ymin, ymax])
-            cset = ax.contour(xx, yy, f, colors='k')
-            ax.clabel(cset, inline=1, fontsize=10)
-            ax.set_xlabel('X')
-            ax.set_ylabel('Y')
-            plt.title('2D Gaussian Kernel density estimation')
+        margin_mask = self.hv_border(points2D.T)
 
-        return kernel.evaluate(points2D.T) * 10000000, f
+        return f, f, margin_mask
 
     def number_of_columns(self, density2D):
         peaks_at_height_steps = []
         for height in range(
-                int(config.reader_height * 0.1),
-                int(config.reader_height * 0.9),
-                int(config.reader_height * 0.05)):
-            peaks, _ = find_peaks(density2D[:, 30], distance=25, prominence=0.0000009)
+                int(config.page_array_model * 0.1),
+                int(config.page_array_model * 0.9),
+                int(config.page_array_model * 0.05)):
+            peaks, _ = find_peaks(density2D[:, height], distance=2, prominence=0.1)
             peaks_at_height_steps.append(peaks)
         lens = [len(peaks) for peaks in peaks_at_height_steps]
         counts = Counter(lens)
@@ -482,6 +481,27 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
     def collect_all_divs(self, soup):
         return soup.select('div[class*=x]')
 
+    def hv_border(self, points2d):
+        max_coord = points2d[1, :].max()
+        xrow = numpy.array([0] + points2d[1, :].tolist() + [max_coord + 10])
+
+        dx = list(zip(*list((a, b-a) for (a,b) in more_itertools.pairwise(sorted(xrow)))))
+        fun = scipy.interpolate.interp1d(*dx)
+        minx = points2d[1, :].min()
+        maxx = points2d[1, :].max()
+        n_values = complex(config.page_array_model)
+        try:
+            y = fun(numpy.mgrid[minx : maxx : n_values])
+            h_peaks, _ = find_peaks(y, distance=25, prominence=0.0000009)
+            plt.hist(y, bins=len(y), normed=True)
+        except ValueError:
+            logging.error("out of interpolation range")
+
+        if len(h_peaks) == 1:
+            return numpy.full_like(points2d, True)
+
+        if len(h_peaks) > 1:
+            logging.info("found some page with header or footnote?")
 
 import unittest
 
@@ -491,38 +511,39 @@ class TestPaperReader(unittest.TestCase):
 
     def test_columns_and_file_existence(self):
         docs = [
-            {
-                'html_path_before': 'docs/Wei Quian - Translating Embeddings for Knowledge Graph Completion with Relation Attention Mechanism.pdf.html',
-                'html_path_after': 'docs/Wei Quian - Translating Embeddings for Knowledge Graph Completion with Relation Attention Mechanism.test.html',
-                'cols': 2
-            },
-            {
-                'html_path_before': 'docs/Sonja Vermeulen - Climate Change and Food Systems.pdf.html',
-                'html_path_after': 'docs/Sonja Vermeulen - Climate Change and Food Systems.pdf.html.pdf2htmlEX.test.html',
-                'cols': 2
-            },
-            {'html_path_before': 'docs/Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html',
-             'html_path_after': 'docs/Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html.pdf2htmlEX.test.html',
+            {'html_path_before': 'Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html',
+             'html_path_after': 'Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html.pdf2htmlEX.test.html',
              'cols': 1
              },
             {
-                'html_path_before': 'docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.html',
-                'html_path_after': 'docs/Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.pdf2htmlEX.test.html',
+                'html_path_before': 'Wei Quian - Translating Embeddings for Knowledge Graph Completion with Relation Attention Mechanism.pdf.html',
+                'html_path_after': 'Wei Quian - Translating Embeddings for Knowledge Graph Completion with Relation Attention Mechanism.test.html',
                 'cols': 2
             },
             {
-                'html_path_before': 'docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
-                'html_path_after': 'docs/Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.test.html',
+                'html_path_before': 'Sonja Vermeulen - Climate Change and Food Systems.pdf.html',
+                'html_path_after': 'Sonja Vermeulen - Climate Change and Food Systems.pdf.html.pdf2htmlEX.test.html',
+                'cols': 2
+            },
+
+            {
+                'html_path_before': 'Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.html',
+                'html_path_after': 'Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.pdf2htmlEX.test.html',
+                'cols': 2
+            },
+            {
+                'html_path_before': 'Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
+                'html_path_after': 'Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.test.html',
                 'cols': 3
             },
             {
-                'html_path_before': 'docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.html',
-                'html_path_after': 'docs/F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.pdf2htmlEX.test.html',
+                'html_path_before': 'F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.html',
+                'html_path_after': 'F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.pdf2htmlEX.test.html',
                 'cols': 2
             },
             {
-                'html_path_before': 'docs/HumKno.pdf.html',
-                'html_path_after': 'docs/HumKno.pdf.pdf2htmlEX.test.html',
+                'html_path_before': 'HumKno.pdf.html',
+                'html_path_after': 'HumKno.pdf.pdf2htmlEX.test.html',
                 'cols': 1
             }
         ]
@@ -530,6 +551,8 @@ class TestPaperReader(unittest.TestCase):
         for kwargs in docs:
             columns = kwargs['cols']
             del kwargs['cols']
+            kwargs['html_path_before'] = config.appcorpuscook_docs_document_dir + kwargs['html_path_before']
+            kwargs['html_path_after'] = config.appcorpuscook_docs_document_dir + kwargs['html_path_after']
             self.tfu_pdf.convert_and_index(**kwargs)
             assert self.tfu_pdf.number_columns == columns
             assert self.tfu_pdf.indexed_words

@@ -2,6 +2,7 @@ parse_pdf2htmlEX = True
 recursive = True
 max_len = 200
 NORMAL_HEIGHT = 100
+page_array_model = 30
 
 doc_port        = 5180
 app_port        = 5181
