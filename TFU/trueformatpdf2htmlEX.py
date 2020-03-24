@@ -446,11 +446,22 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
     edges = numpy.array(
         [[0, 0], [0, config.reader_height], [config.reader_width, 0], [config.reader_width, config.reader_height]])
 
+    def normalized(self, a, axis=-1, order=-2):
+        l2 =numpy.atleast_1d(numpy.linalg.norm(a, order, axis))
+        l2[l2==0] = 1
+        return a/numpy.expand_dims(l2, axis)
+
     def point_density_frequence(self, points2D, debug=True):
+
         edges_and_points = numpy.vstack((points2D, self.edges))
+        edges_and_points = self.normalized(edges_and_points, axis=0, order=100)
         kde = fastKDE.fastKDE(edges_and_points.T, beVerbose=True)
         f = kde.pdf
-        f = f * 1 / sum(sum(f))  # normalize f, that it's 1 in sum
+        f = f * 1 / sum(sum(f)) * 10000  # normalize f, that it's 1 in sum
+        indices = f.shape * edges_and_points[:-4]
+        indices = indices.astype(int)
+        pdfs = f[indices]
+        # project
 
         #if debug:
         #    plt.contour(v1, v2, f)
@@ -458,7 +469,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
 
         margin_mask = self.hv_border(points2D.T)
 
-        return f, f, margin_mask
+        return pdfs, f, margin_mask
 
     def number_of_columns(self, density2D):
         peaks_at_height_steps = []
