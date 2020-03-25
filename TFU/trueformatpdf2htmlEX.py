@@ -13,12 +13,14 @@ from fastkde import fastKDE
 from more_itertools.recipes import flatten
 from numpy import mean
 from scipy import stats
+from scipy.ndimage import gaussian_filter
 from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pprint
 
 from scipy.stats import norm
+from sklearn.neighbors import KernelDensity
 
 import config
 from Exceptions.ConversionException import EmptyPageConversionError
@@ -129,9 +131,9 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
                 algorithm='boruvka_balltree',
                 metric='hamming',
                 epsilon=0.5,
-                alpha=0.69,
-                cluster_size=188,
-                samples=38
+                alpha=0.95,
+                cluster_size=200,
+                samples=50
             )
         else:
             range_cluster_selection_epsilon = self.create_eval_range(0.455, sigma=0.1, resolution=0.33)
@@ -143,71 +145,76 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
                 for cluster_size in range_min_cluster_size:
                     for samples in range_min_samples:
                         for alpha in range_alpha:
-                            for algorithm in ['boruvka_balltree']:  # , 'boruvka_kdtree', 'generic', 'prims']:
-                                for metric in [
-                                    'hamming']:  # , 'l1', 'l2', 'hamming', 'infinity', 'p', 'chebyshev', 'cityblock', 'braycurtis', 'euclidean']:
+                            for algorithm in [ 'boruvka_kdtree', 'generic', 'prims']:
+                                for metric in [ 'l1', 'l2', 'hamming', 'infinity', 'p', 'chebyshev', 'cityblock', 'braycurtis', 'euclidean']:
+                                        file_in_folder = insert_at_index(html_after_path,
+                                                                         html_after_path.rfind("/"),
+                                                                         debug_folder)
+                                        parametrerized_file_in_folder = insert_at_index(
+                                            file_in_folder,
+                                            file_in_folder.rfind("/") + 1,
+                                            f"e-{epsilon:.2f},a-{alpha:.2f},"
+                                            f"cs-{int(cluster_size)},s-{int(samples)},"
+                                            f"m-{metric},a-{algorithm}")
 
-                                    file_in_folder = insert_at_index(html_after_path,
-                                                                     html_after_path.rfind("/"),
-                                                                     debug_folder)
-                                    parametrerized_file_in_folder = insert_at_index(
-                                        file_in_folder,
-                                        file_in_folder.rfind("/") + 1,
-                                        f"e-{epsilon:.2f},a-{alpha:.2f},"
-                                        f"cs-{int(cluster_size)},s-{int(samples)},"
-                                        f"m-{metric},a-{algorithm}")
+                                        # Following function is so overbusted with parameters to test all features and to precompute some data for experimenting
+                                        self.generate_css_tagging_document_(# input, output destination to write file in the same form
+                                                                            html_before_path=html_before_path,
+                                                                            parametrerized_file_in_folder=parametrerized_file_in_folder,
 
-                                    # Following function is so overbusted with parameters to test all features and to precompute some data for experimenting
-                                    self.generate_css_tagging_document_(# input, output destination to write file in the same form
-                                                                        html_before_path=html_before_path,
-                                                                        parametrerized_file_in_folder=parametrerized_file_in_folder,
+                                                                            # precomputed data as input
+                                                                            all_divs=all_divs,
+                                                                            data=data,
+                                                                            coords=coords,
+                                                                            density_field=density_field,
 
-                                                                        # precomputed data as input
-                                                                        all_divs=all_divs,
-                                                                        data=data,
-                                                                        coords=coords,
-                                                                        density_field=density_field,
-
-                                                                        # clustering parameters
-                                                                        algorithm=algorithm,
-                                                                        alpha=alpha,
-                                                                        cluster_size=cluster_size,
-                                                                        epsilon=epsilon,
-                                                                        metric=metric,
-                                                                        samples = samples
-                                                                        )
+                                                                            # clustering parameters
+                                                                            algorithm=algorithm,
+                                                                            alpha=alpha,
+                                                                            cluster_size=cluster_size,
+                                                                            epsilon=epsilon,
+                                                                            metric=metric,
+                                                                            samples = samples
+                                                                            )
 
     def generate_css_tagging_document_(self, algorithm, all_divs, alpha, cluster_size, coords, data, density_field,
                                        epsilon, html_before_path, metric, parametrerized_file_in_folder, samples):
-        sort_indices_divs_in_cols_lefrig_botup, indices_clusters_dict = self.fmr_hdbscan(
-            [
-                Page_Features.left,
-                Page_Features.density,
-                Page_Features.line_height
-            ],
-            all_divs, coords, data, density_field,
-            metric=metric,
-            algorithm=algorithm,
-            cluster_selection_method="leaf",
-            debug_pic_name=parametrerized_file_in_folder,
-            cluster_selection_epsilon=float(epsilon),  # ,
-            allow_single_cluster=False,
-            min_cluster_size=int(cluster_size),  # 100,
-            min_samples=int(samples),  # 45,
-            alpha=alpha  # 0.99
-        )
+        try:
+            sort_indices_divs_in_cols_lefrig_botup, indices_clusters_dict = self.fmr_hdbscan(
+                [
+                    Page_Features.left,
+                    Page_Features.density,
+                    Page_Features.font_size,
+                ],
+                all_divs, coords, data, density_field,
+                metric=metric,
+                algorithm=algorithm,
+                cluster_selection_method="leaf",
+                debug_pic_name=parametrerized_file_in_folder,
+                cluster_selection_epsilon=float(epsilon),  # ,
+                allow_single_cluster=False,
+                min_cluster_size=int(cluster_size),  # 100,
+                min_samples=int(samples),  # 45,
+                alpha=alpha  # 0.99
+            )
 
-        with open(html_before_path, 'r', encoding='utf8') as f:
-            soup = bs4.BeautifulSoup(f.read(), features='lxml')
-        self.manipulate_document(soup=soup,
-                                 sorting=sort_indices_divs_in_cols_lefrig_botup,
-                                 clusters_dict=indices_clusters_dict,
-                                 )
+            with open(html_before_path, 'r', encoding='utf8') as f:
+                soup = bs4.BeautifulSoup(f.read(), features='lxml')
+            self.manipulate_document(soup=soup,
+                                     sorting=sort_indices_divs_in_cols_lefrig_botup,
+                                     clusters_dict=indices_clusters_dict,
+                                     )
 
-        # change '<' and '>' mail adress of pdf2htmlEX-author, because js thinks, it's a tag
-        with open(parametrerized_file_in_folder, "w",
-                  encoding='utf8') as file:
-            file.write(str(soup).replace("<coolwanglu@gmail.com>", "coolwanglu@gmail.com"))
+            # change '<' and '>' mail adress of pdf2htmlEX-author, because js thinks, it's a tag
+            with open(parametrerized_file_in_folder, "w",
+                      encoding='utf8') as file:
+                file.write(str(soup).replace("<coolwanglu@gmail.com>", "coolwanglu@gmail.com"))
+        except ArithmeticError:
+            logging.error(f"too few columns for {parametrerized_file_in_folder}")
+        #except ValueError:
+        #    logging.error(f"invalid metric for  {parametrerized_file_in_folder}")
+        #except TypeError:
+        #    logging.error(f"invalid algorihm for {parametrerized_file_in_folder}")
 
 
     def fmr_pages(self, soup):
@@ -218,7 +225,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
                     features_to_use,
                     all_divs, coords, data, density_field,
                     debug_pic_name="/debug_pics/output.png",
-                    debug=False,
+                    debug=True,
                     **kwargs):
         """
         hdbscan on font height, x position and y position to recognize all groups of textboxes in different parts of
@@ -232,7 +239,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         outliers = numpy.where(clusterer.outlier_scores_ > threshold)[0]
 
         # Determine number of clusters
-        number_columns = self.number_of_columns(density2D=density_field)
+        number_columns = self.number_of_columns(density2D=density_field.T)
         self.number_columns = number_columns
         logging.info(f"Detection of {number_columns} columns")
         what_clusters = set(clusterer.labels_)
@@ -244,6 +251,10 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
             clusterer.labels_ = [0]* len(clusterer.labels_)
         else:
             self.take_outliers = False
+
+        logging.warning("TAKE ALL FOR DEBUGGING")
+        self.take_outliers = True
+        clusterer.labels_ = [0] * len(clusterer.labels_)
 
         cluster_counts = Counter([l for l in clusterer.labels_ if self.take_outliers or l > -1])
         relevant_clusters = sorted(cluster_counts, key=cluster_counts.get)[-number_columns:]
@@ -262,12 +273,6 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
             if len(what_clusters) < number_columns:
                 logging.error("Too few columns found")
                 raise ArithmeticError
-
-        # Ordering pages and columns and divs
-        # page_groups[pages]        = {columns: divs]
-        #                             left to right sorting of columns and
-        #                             top-down of textboxes
-        #                             (not all divs together!)
 
         # collecting divs on the page (and append clustering label and index to the features)
         groups_of_pages = defaultdict(list)
@@ -337,11 +342,11 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
             page_2_coords  = numpy.split(page_coords[:, 1:], numpy.cumsum(numpy.unique(page_coords[:, 0], return_counts=True)[1])[:-1])
         except IndexError:
             raise EmptyPageConversionError
-        densities_at_points, density_field, margin_mask = self.point_density_frequence_per_page(page_2_coords, debug=True)
+        densities_at_points, density_field, mask = self.point_density_frequence_per_page(page_2_coords, debug=True)
 
         data = numpy.column_stack((data, densities_at_points))
-        #return all_divs[margin_mask], coords[margin_mask], data[margin_mask], density_field
-        return all_divs, coords, data, density_field
+        return [div for div, to_use in zip(all_divs, mask) if to_use], coords[:, mask], data[mask], density_field
+        #return all_divs, coords, data, density_field
 
     def collect_pages_dict(self, pages):
         page2divs = [page.select('div[class*=x]') for page in pages]
@@ -417,7 +422,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
                                           attr.startswith('ff') or
                                           attr.startswith('fs'))
         except ValueError:
-            logging.info(f"Tag with missing attributes (containing '{tag.contents}'")
+            #logging.info(f"Tag with missing attributes (containing '{tag.contents}'")
             return [0] * 6
 
         resolution = 1
@@ -440,36 +445,32 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         return hxys
 
     def point_density_frequence_per_page (self, pages_2_points, **kwargs):
-        coords_densities, fields, margin_masks = list(zip(*[self.point_density_frequence(points2D=points2D, **kwargs) for points2D in pages_2_points]))
-        return numpy.hstack(coords_densities), sum(f for i, f in enumerate(fields) if margin_masks[i])/len(margin_masks), numpy.hstack(margin_masks)
+        coords_densities, fields, masks = list(zip(*[self.point_density_frequence(points2D=points2D, **kwargs) for points2D in pages_2_points]))
+        return numpy.hstack(coords_densities), sum(f for i, f in enumerate(fields)), numpy.hstack(masks)
 
     edges = numpy.array(
         [[0, 0], [0, config.reader_height], [config.reader_width, 0], [config.reader_width, config.reader_height]])
 
-    def normalized(self, a, axis=-1, order=-2):
-        l2 =numpy.atleast_1d(numpy.linalg.norm(a, order, axis))
-        l2[l2==0] = 1
-        return a/numpy.expand_dims(l2, axis)
+    def normalized(self, a):
+        return a/[a_line.max()-a_line.min() for a_line in a.T]
 
-    def point_density_frequence(self, points2D, debug=True):
-
+    def point_density_frequence(self, points2D, debug=True, axe_len_X=100, axe_len_Y=100):
         edges_and_points = numpy.vstack((points2D, self.edges))
-        edges_and_points = self.normalized(edges_and_points, axis=0, order=100)
-        kde = fastKDE.fastKDE(edges_and_points.T, beVerbose=True)
-        f = kde.pdf
-        f = f * 1 / sum(sum(f)) * 10000  # normalize f, that it's 1 in sum
-        indices = f.shape * edges_and_points[:-4]
-        indices = indices.astype(int)
-        pdfs = f[indices]
-        # project
+        edges_and_points = self.normalized(edges_and_points)
 
-        #if debug:
-        #    plt.contour(v1, v2, f)
-        #    plt.show()
+        indices = (edges_and_points[:-4] * [axe_len_X, axe_len_Y]).astype(int)
 
-        margin_mask = self.hv_border(points2D.T)
+        dotted = numpy.zeros((100,100))
+        dotted [indices[:,0], indices[:,1]] = 1
 
-        return pdfs, f, margin_mask
+        coarse_grained_field =  gaussian_filter(dotted, sigma=3)
+        coarse_grained_pdfs = coarse_grained_field [indices[:,0], indices[:,1]]
+
+        fine_grained_field =  gaussian_filter(dotted, sigma=0.5)
+        fine_grained_pdfs = fine_grained_field [indices[:,0], indices[:,1]]
+
+        mask = self.header_footer_mask(fine_grained_field, fine_grained_pdfs)
+        return coarse_grained_pdfs, coarse_grained_field, mask
 
     def number_of_columns(self, density2D):
         peaks_at_height_steps = []
@@ -477,7 +478,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
                 int(config.page_array_model * 0.1),
                 int(config.page_array_model * 0.9),
                 int(config.page_array_model * 0.05)):
-            peaks, _ = find_peaks(density2D[:, height], distance=2, prominence=0.1)
+            peaks, _ = find_peaks(density2D[height], distance=20, prominence=0.05)
             peaks_at_height_steps.append(peaks)
         lens = [len(peaks) for peaks in peaks_at_height_steps]
         counts = Counter(lens)
@@ -514,6 +515,15 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         if len(h_peaks) > 1:
             logging.info("found some page with header or footnote?")
 
+    def header_footer_mask(self, field, pdfs):
+        mask = numpy.full_like(pdfs, True).astype(bool)
+
+        if len(pdfs)>10:
+            density_std = numpy.std(pdfs)
+            density_mean = numpy.mean(pdfs)
+            mask[pdfs<density_mean-density_std] = False
+        return mask
+
 import unittest
 
 
@@ -522,20 +532,27 @@ class TestPaperReader(unittest.TestCase):
 
     def test_columns_and_file_existence(self):
         docs = [
-            {'html_path_before': 'Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html',
-             'html_path_after': 'Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html.pdf2htmlEX.test.html',
-             'cols': 1
-             },
             {
-                'html_path_before': 'Wei Quian - Translating Embeddings for Knowledge Graph Completion with Relation Attention Mechanism.pdf.html',
-                'html_path_after': 'Wei Quian - Translating Embeddings for Knowledge Graph Completion with Relation Attention Mechanism.test.html',
-                'cols': 2
+                'html_path_before': 'Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
+                'html_path_after': 'Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.test.html',
+                'cols': 3
             },
             {
                 'html_path_before': 'Sonja Vermeulen - Climate Change and Food Systems.pdf.html',
                 'html_path_after': 'Sonja Vermeulen - Climate Change and Food Systems.pdf.html.pdf2htmlEX.test.html',
                 'cols': 2
             },
+            {
+                'html_path_before': 'Wei Quian - Translating Embeddings for Knowledge Graph Completion with Relation Attention Mechanism.pdf.html',
+                'html_path_after': 'Wei Quian - Translating Embeddings for Knowledge Graph Completion with Relation Attention Mechanism.test.html',
+                'cols': 2
+            },
+            {'html_path_before': 'Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html',
+             'html_path_after': 'Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html.pdf2htmlEX.test.html',
+             'cols': 1
+             },
+
+
 
             {
                 'html_path_before': 'Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.html',
@@ -560,11 +577,13 @@ class TestPaperReader(unittest.TestCase):
         ]
 
         for kwargs in docs:
+            logging.error(kwargs)
             columns = kwargs['cols']
             del kwargs['cols']
             kwargs['html_path_before'] = config.appcorpuscook_docs_document_dir + kwargs['html_path_before']
             kwargs['html_path_after'] = config.appcorpuscook_docs_document_dir + kwargs['html_path_after']
             self.tfu_pdf.convert_and_index(**kwargs)
+            print (self.tfu_pdf.number_columns, columns)
             assert self.tfu_pdf.number_columns == columns
             assert self.tfu_pdf.indexed_words
             assert os.path.exists(kwargs['html_path_after'])

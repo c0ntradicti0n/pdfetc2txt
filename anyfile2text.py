@@ -70,9 +70,7 @@ class PaperReader:
 
             if config.parse_pdf2htmlEX:
                 os.system(f"pdf2htmlEX  "
-                          f"--space-as-offset 1  "
                           f"--optimize-text 1 "
-                          f"--decompose-ligature 1  "
                           f"--fit-width {config.reader_width}  "
                           f"\"{adress}\" \"{paths.html_before_indexing}\"")
             tfu = self.tfu_pdf

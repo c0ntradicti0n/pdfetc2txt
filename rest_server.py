@@ -35,42 +35,55 @@ def work_out_file(path):
 
     # Starting annotation
     logging.info(f"Annotating {path}: Calling CorpusCookApp to call CorpusCook")
-    requests.post(url=f"http://localhost:{config.app_port}/annotate_certain_json_in_doc_folder",
-                  json={'filename': reader.paths.json_path, 'meta': meta})
+    try:
+        requests.post(
+            url=f"http://localhost:{config.app_port}/annotate_certain_json_in_doc_folder",
+            json=
+                {'filename': reader.paths.json_path,
+                 'meta': meta},
+        )
+    except requests.exceptions.ConnectionError:
+        logging.error("CorpusCookApp offline")
+
 
 
 
 
 def latest_difference_between(n=10):
-    logging.info("downloading front page of differencebetween")
+    try:
+        logging.info("downloading front page of differencebetween")
 
-    req = Request(
-        'https://differencebetween.com',
-        headers={'User-Agent': 'Mozilla/5.0'})
+        req = Request(
+            'https://differencebetween.com',
+            headers={'User-Agent': 'Mozilla/5.0'})
 
-    f = urllib.request.urlopen(req)
-    page = f.read()
-    soup = BeautifulSoup(page, 'html.parser')
-    anchors = list(soup.find_all('a', attrs = {'rel':'bookmark'})) [:n]
-    for anchor in anchors:
-        text_ground_path = anchor.get_text()
-        text_path = config.appcorpuscook_diff_txt_dir + text_ground_path + "_html" + ".txt"
-        html_path = config.appcorpuscook_diff_document_dir + text_ground_path + ".html"
+        f = urllib.request.urlopen(req)
+        page = f.read()
+        soup = BeautifulSoup(page, 'html.parser')
+        anchors = list(soup.find_all('a', attrs = {'rel':'bookmark'})) [:n]
+        for anchor in anchors:
+            text_ground_path = anchor.get_text()
+            text_path = config.appcorpuscook_diff_txt_dir + text_ground_path + "_html" + ".txt"
+            html_path = config.appcorpuscook_diff_document_dir + text_ground_path + ".html"
 
-        if not os.path.exists(text_path):
-            logging.info(f"downloading page for '{text_ground_path}'")
-            diffpagereq = Request(
-                anchor['href'],
-                headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(diffpagereq) as response:
-                html = response.read().decode("utf-8")
-                with open(text_path, 'w') as tf:
-                    tf.write(BeautifulSoup(html, features="lxml").body.text)
-                with open(html_path, 'w') as hf:
-                    hf.write(html)
-            work_out_file(html_path)
+            if not os.path.exists(text_path):
+                logging.info(f"downloading page for '{text_ground_path}'")
+                diffpagereq = Request(
+                    anchor['href'],
+                    headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(diffpagereq) as response:
+                    html = response.read().decode("utf-8")
+                    with open(text_path, 'w') as tf:
+                        tf.write(BeautifulSoup(html, features="lxml").body.text)
+                    with open(html_path, 'w') as hf:
+                        hf.write(html)
+                work_out_file(html_path)
 
-    t_diff.update()
+        t_diff.update()
+    except requests.exceptions.ConnectionError:
+        logging.error("Connection was refused by site")
+    except urllib.error.URLError:
+        logging.error("Connection was refused, no internet")
 
 
 import topic_modelling
@@ -117,10 +130,12 @@ def recompute_all():
 
 
 def recompute(folder):
+    logging.info("Recomputation started")
     files = os.listdir(folder)
     files = [f for f in files if not (f.endswith("html") or f.endswith('txt'))]
     for f in files:
         work_out_file(config.appcorpuscook_docs_document_dir + f)
+    logging.info("Recomputation finished")
     return ""
 
 

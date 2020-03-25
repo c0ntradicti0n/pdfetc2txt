@@ -1,9 +1,12 @@
 import itertools
 import json
 import logging
+from collections import namedtuple
+from typing import NamedTuple
+
 import numpy
 import tinycss
-from bs4 import Tag
+from bs4 import Tag, NavigableString
 from more_itertools import flatten
 from regex import regex
 from tinycss.css21 import RuleSet
@@ -20,6 +23,7 @@ class TrueFormatUpmarker(object):
         self.debug = debug
         self.parameterize = parameterize
         din_rel = numpy.sqrt(2)
+
         if not min_bottom:
             self.min_bottom = 0
         else:
@@ -37,7 +41,7 @@ class TrueFormatUpmarker(object):
 
     def convert_and_index(self, html_path_before="", html_path_after=""):
         logging.warning(f"working on {html_path_before}")
-        self.generate_css_tagging_document(html_path_before, html_path_after, "/debug_output")
+        self.generate_css_tagging_document(html_path_before, html_path_after, "/debug")
 
     def get_indexed_words(self):
         return self.indexed_words
@@ -61,11 +65,10 @@ class TrueFormatUpmarker(object):
                             ):
         self.indexed_words = {}  # reset container for words
         self.count_i = itertools.count()  # counter for next indices for new html-tags
-        character_splitter = lambda divcontent: TrueFormatUpmarker.tokenize_differential_signs(divcontent)
         text_divs = self.collect_all_divs(soup)
         self.index_words(soup=soup,
                          **kwargs,
-                         text_divs=text_divs,
+                         text_divs=text_divs
                          )
         if self.debug:
             self.add_text_coverage_markup(soup)
@@ -109,22 +112,29 @@ class TrueFormatUpmarker(object):
         words = [word.strip() for word in words if word.strip()]
         return words
 
-    def make_new_tag(self, soup, word, debug_percent, **kwargs):
+    IndexedWordTag = namedtuple("IndexedWordTag", ["index", "word", "tag"])
+    def make_new_tag(self, soup, word, debug_percent, **kwargs) -> IndexedWordTag:
         self.id = self.count_i.__next__()
         if self.debug:
-            kwargs.update({"style": f"color:hsl({int(debug_percent * 360)}, 100%, 50%);"})
-        tag = soup.new_tag(self.WRAP_TAG, id=f"{self.WRAP_TAG}{self.id}",
+            kwargs.update(
+                {
+                    "style":
+                        f"color:hsl({int(debug_percent * 360)}, 100%, 50%);"
+                }
+            )
+        tag = soup.new_tag(self.WRAP_TAG,
+                           id=f"{self.WRAP_TAG}{self.id}",
                            **kwargs)
 
         tag.append(word)
-        return (self.id, word), tag
+        return self.IndexedWordTag(self.id, word, tag)
 
 
     def index_words(self,
                     soup,  # for generating new tags
                     sorting,
                     text_divs,
-                    clusters_dict,
+                    clusters_dict
                     ):
         """
             splitter is a function that gives back a list of 2-tuples, that mean the starting index,
@@ -151,39 +161,34 @@ class TrueFormatUpmarker(object):
             else:
                 debug_percent = 0.5
 
-            if hasattr(text_div, "contents"):
-                spaces = [] #[tag for tag in text_div.contents if isinstance(tag, Tag) and tag.get_text() == " "]
+            change_list = list(self.tags_to_change(debug_percent, soup, text_div))
+            indexing_css_update = {}
+            for indexed_div_content in change_list[::-1]:
+                text_div.contents.pop(indexed_div_content.div_content_index)
 
-            # As side effect the elements of the html soup are wrapped in a new bs4 tag-element
+                for indexed_word_tag in indexed_div_content.indexed_word_tags[::-1]:
+                    text_div.contents.insert(
+                        indexed_div_content.div_content_index,
+                        indexed_word_tag.tag)
+                    indexing_css_update[indexed_word_tag.index] = indexed_word_tag.word
 
-            # a itself ending tag <bla/> cant have a text and throws an error
-            try:
-                text_to_split = text_div.get_text()
-            except AttributeError:
-                logging.debug("yet changed tag")
-                continue
-            words = TrueFormatUpmarker.tokenize_differential_signs(text_to_split)
+            self.indexed_words.update(dict(indexing_css_update))
 
-            if not words or not any(words):
-                logging.debug("tag without text")
-                continue
 
-            logging.debug(f"putting words into tag again {pformat(words[:100], compact=True)}")
-            text_div.clear()
-            ids2words_tagwords = [self.make_new_tag(
-                soup,
-                word,
-                debug_percent=debug_percent)
-                for word in words]
-            if ids2words_tagwords:
-                css_ids2words, tagged_words = list(
-                            zip(*ids2words_tagwords))
-
-            for i, tagged_word in enumerate(tagged_words[::-1]):
-                text_div.contents.insert(0, tagged_word)
-                text_div.contents.insert(0, spaces[i] if i < len(spaces) else space)
-
-            self.indexed_words.update(dict(css_ids2words))
+    IndexedDivContent = namedtuple("IndexedDivContent", ["div_content_index", "indexed_word_tags"])
+    def tags_to_change(self, debug_percent, soup, text_div) -> IndexedDivContent :
+        x = 1
+        for div_tag_index, content in enumerate(text_div.contents):
+            if isinstance(content, NavigableString):
+                words = TrueFormatUpmarker.tokenize_differential_signs(content)
+                new_tags = [
+                    self.make_new_tag(
+                        soup,
+                        word,
+                        debug_percent=debug_percent)
+                    for word in words
+                ]
+                yield TrueFormatUpmarker.IndexedDivContent(div_tag_index, new_tags)
 
     def collect_all_divs(self, soup):
         raise NotImplementedError
