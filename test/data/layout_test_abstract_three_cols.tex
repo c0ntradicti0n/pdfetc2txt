@@ -1,0 +1,56 @@
+\documentclass{article}
+\usepackage{lipsum}
+\usepackage{multicol}
+\usepackage{xpatch}
+
+\newlength{\abstractwidth}
+\newlength{\columnshrink}
+\newsavebox{\twocolinsert}
+
+\makeatletter
+\newlength{\resized@col}
+\newcounter{column@count}
+
+\xpatchcmd{\multi@column@out}{\process@cols\mult@gfirstbox{%
+  \setbox\count@
+  \vsplit\@cclv to\dimen@
+  \set@keptmarks
+  \setbox\count@
+  \vbox to\dimen@
+  {\unvbox\count@
+    \ifshr@nking\vfilmaxdepth\fi}%
+  }%
+}{\process@cols\mult@gfirstbox{%
+  \global\advance\c@column@count\@ne
+  \resized@col\dimen@%
+  \ifnum\c@column@count=\tw@
+      \advance\resized@col-\columnshrink
+  \fi%
+  \setbox\count@
+  \vsplit\@cclv to\resized@col
+  \set@keptmarks
+  \setbox\count@
+  \vbox to\dimen@
+  { \ifnum\c@column@count=\tw@ \vspace*{\columnshrink} \fi%
+    \unvbox\count@
+    \ifshr@nking\vfilmaxdepth\fi}%
+  }%
+}{\typeout{Success}}{\typeout{Failure}}
+\makeatother
+
+\begin{document}
+\begin{multicols}{3}
+  \setlength{\abstractwidth}{2\linewidth}
+  \addtolength{\abstractwidth}{\columnsep}
+  \savebox{\twocolinsert}{\begin{minipage}{\abstractwidth}
+      \section*{Abstract}
+      \lipsum[1]
+  \end{minipage}}
+  \setlength{\columnshrink}{\ht\twocolinsert}
+  \addtolength{\columnshrink}{\dp\twocolinsert}
+  \noindent\usebox{\twocolinsert}
+
+  \section*{Introduction}
+  \lipsum[2-10]
+  \end{multicols}
+\end{document}

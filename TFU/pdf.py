@@ -1,21 +1,47 @@
-import numpy
-from scipy.stats import norm
-import pylab as plt
-from fastkde import fastKDE
+import logging
+from typing import Callable
 
-import config
 
-edges = numpy.array([[0,0],[0,config.reader_height],[config.reader_width,0], [config.reader_width,config.reader_height]])
+class Pdf:
+    def __init__(self):
+        pass
 
-points = numpy.array([[149.0, 850.710091], [149.0,  827.278607], [149.0, 815.564041], [149.0, 803.848299], [149.0, 792.132557], [149.0, 756.986507], [149.0, 733.556199], [149.0, 710.125891], [149.0, 686.695583], [149.0, 663.264099], [149.0, 639.833791], [149.0, 616.403483], [149.0, 592.972   ]])
-points = numpy.vstack((points, edges))
-xrow = points.T[1]
-yrow = points.T[0]
+    def verify(self, serious=False, test_document=False):
+        attributes = {attr: getattr(self,attr)
+                      for attr in dir(self)
+                      if not isinstance(getattr(self,attr), Callable)
+                      and not attr.startswith("__")}
+        for attr, value in attributes.items():
+            if not value:
+                logging.error(f"{attr} is not set")
+                if serious:
+                    assert value
 
-pdf, (v1, v2) = fastKDE.pdf(xrow, yrow)
-plt.contour(v1,v2, pdf *10000)
-plt.show()
+        if test_document:
+            score = 0
+            for page, cols in self.pages_to_column_to_text.items():
+                if len(cols) == self.columns:
+                    score += 100
+                for col_number, col_text in cols.items():
+                    if "text" in col_text and "column" in col_text:
+                        score += 1
+                    if str(col_number) in col_text:
+                        score += 1
+                    if not str(col_number + 1) in col_text:
+                        score += 1
+                    if not str(col_number - 1) in col_text:
+                        score += 1
+            return score
 
-density = norm(xrow).pdf(xrow)
-#plt.plot(xrow, numpy.full_like(xrow, -0.1), '|k', markeredgewidth=1)
-#plt.axis([-4, 8, -.2, 5])
+
+
+
+
+
+    #title = ""
+    columns = 0
+    #columns_per_page = []
+    text = ""
+    indexed_words = {}
+    #footnotes = []
+    #bibliography = []

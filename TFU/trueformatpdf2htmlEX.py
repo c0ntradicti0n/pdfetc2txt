@@ -22,11 +22,10 @@ import regex
 
 import config
 from Exceptions.ConversionException import EmptyPageConversionError
+from TFU.pdf import Pdf
 from TFU.trueformatupmarker import TrueFormatUpmarker
 from helpers.color_logger import *
 from helpers.list_tools import threewise
-from helpers.str_tools import insert_at_index
-
 
 class Page_Features:
     page_number = 6
@@ -70,7 +69,7 @@ metrics = {'braycurtis': hdbscan.dist_metrics.BrayCurtisDistance,
            'wminkowski': hdbscan.dist_metrics.WMinkowskiDistance}
 
 class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
-    def generate_css_tagging_document(self, html_before_path, html_after_path):
+    def generate_css_tagging_document(self, html_read_from="", html_write_to="", parameterizing=False):
         """
         This manipulates an html-file from the result of pdf2htmlEX, that inserts word for word tags with css ids
         to apply markup to these words only with a css-file, without changing this document again.
@@ -78,21 +77,25 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         This has to restore the semantics of the layout, as the reading sequence of left right, top to bottom,
         column for column, page for page. Other layout things should disappear from the text sequence.
         """
-        with open(html_before_path, 'r', encoding='utf8') as f:
+
+        with open(html_read_from, 'r', encoding='utf8') as f:
             soup = bs4.BeautifulSoup(f.read(), features='lxml')
 
         # create data and features for clustering
         css_dict = self.get_css(soup)
         features = self.extract_features(soup=soup, css_dict=css_dict)
 
+        self.pdf_obj.columns = self.len_columns
+
+
         hdbscan_kwargs = {
-            'algorithm' : 'boruvka_balltree',
-            'metric' : 'hamming',
-            'cluster_selection_epsilon' :  0.5,
-            'cluster_selection_method' : 'leaf',
-            'alpha' :  0.95,
-            'min_cluster_size' :  200,
-            'min_samples' :  50
+            'algorithm': 'boruvka_balltree',
+            'metric': 'hamming',
+            'cluster_selection_epsilon': 0.5,
+            'cluster_selection_method': 'leaf',
+            'alpha': 0.95,
+            'min_cluster_size': int((len(features.divs) * 0.7) / self.len_columns),
+            'min_samples': int((len(features.divs) * 0.4) / self.len_columns)
         }
 
         reading_sequence_sorted_and_indexed_divs, indices_to_clusters = \
@@ -103,7 +106,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
                     Page_Features.density,
                     Page_Features.font_size,
                 ],
-                debug_path=html_after_path,
+                debug_path=html_write_to,
                 hdbscan_kwargs=hdbscan_kwargs
         )
 
@@ -114,9 +117,15 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
 
         # sanitizing
         # change '<' and '>' mail adress of pdf2htmlEX-author, because js thinks, it's a tag
-        with open(html_after_path, "w",
+        with open(html_write_to, "w",
                   encoding='utf8') as file:
             file.write(str(soup).replace("<coolwanglu@gmail.com>", "coolwanglu@gmail.com"))
+
+        self.pdf_obj.text = " ".join(self.indexed_words.values())
+        self.pdf_obj.indexed_words = self.indexed_words
+
+        return self.pdf_obj
+
 
     def fmr_pages(self, soup):
         return soup.select("div[data-page-no]")
@@ -142,7 +151,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         # Determine number of clusters
         number_columns = self.number_of_columns(density2D=features.density_field.T)
         self.number_columns = number_columns
-        logging.info(f"Detection of {number_columns} columns")
+        logging.info(f"detected {number_columns} columns")
         what_clusters = set(clusterer.labels_)
 
         if number_columns == len(what_clusters):
@@ -154,9 +163,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         else:
             self.take_outliers = False
 
-        logging.warning("#### Take all debugging ####")
-        self.take_outliers = True
-        clusterer.labels_ = [0] * len(clusterer.labels_)
+
 
         cluster_counts = Counter([l for l in clusterer.labels_ if self.take_outliers or l > -1])
         relevant_clusters = sorted(cluster_counts, key=cluster_counts.get)[-number_columns:]
@@ -290,44 +297,6 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
             logging.error(f"{key} not in {str(declaration)}")
             return 0
 
-    def seq_split(lst, cond):
-        sublst = []
-        start = 0
-        for i, item in enumerate(lst):
-            if not cond(item  # logging.info("excluding non-main-text" + str(text_div.contents)[:36])
-                        ):
-                sublst.append(item)
-            else:
-                yield start, sublst
-                sublst = []
-                start = i + 1
-        if sublst:
-            yield start, sublst
-
-    def get_css_decla_for_tag(self, div, css_dict, css_class, key):
-        if isinstance(div, Tag):
-            try:
-                return self.get_declaration_value(
-                    css_dict[[attr for attr in div.attrs['class'] if attr.startswith(css_class)][0]], key=key)
-            except:
-                logging.warning(f"{key} not found for {div} un css_dict, returning 0")
-                return 0
-        else:
-            return 0
-
-    def fmr_height(self, text_divs, css_dict):
-        heights_declarations = {sel: self.get_declaration_value(decla, key="height")
-                                for sel, decla in css_dict.items() if regex.match('h.+', sel)}
-        heights_declarations = {k: v for k, v in heights_declarations.items() if v < NORMAL_HEIGHT}
-        sigma = stdev(list(heights_declarations.values())) * 1.3
-        mid_height = mean(list(heights_declarations.values()))
-        text_divs_up_to_height = [text_div for text_div in text_divs
-                                  if self.get_css_decla_for_tag(text_div, css_dict, 'h', 'height') <= mid_height + sigma
-                                  and self.get_css_decla_for_tag(text_div, css_dict, 'h',
-                                                                 'height') >= mid_height - sigma]
-        return text_divs_up_to_height
-
-
     point_before = (0, 0)
 
     def getxyh(self, tag, css_dict):
@@ -363,8 +332,8 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
 
     def point_density_frequence_per_page (self, pages_to_points, pages_to_divs, **kwargs):
         # map computation to page
-        coords_densities, fields, masks = \
-            list(
+        featrue_kinds = \
+            stacked_feature_kinds = self.FeatureKinds(*list(
                 zip(*[
                     self.point_density_frequence(
                         points2d=points2d,
@@ -373,9 +342,12 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
                     for page_number, points2d in enumerate(pages_to_points)
                     ]
                     )
-            )
+            ))
+        self.len_columns = self.most_common_value(featrue_kinds.number_of_columns)
         # filter, reduce
-        return numpy.hstack(coords_densities), sum(f for i, f in enumerate(fields)), numpy.hstack(masks)
+        return numpy.hstack(featrue_kinds.coarse_grained_pdfs), \
+               sum(f for i, f in enumerate(featrue_kinds.coarse_grained_field)), \
+               numpy.hstack(stacked_feature_kinds.mask)
 
     edges = numpy.array(
         [[0, 0], [0, config.reader_height], [config.reader_width, 0], [config.reader_width, config.reader_height]])
@@ -383,7 +355,9 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
     def normalized(self, a):
         return a/[a_line.max()-a_line.min() for a_line in a.T]
 
-    def point_density_frequence(self, points2d, divs, debug=True, axe_len_X=100, axe_len_Y=100):
+    FeatureKinds = namedtuple("FeatureKinds", ["coarse_grained_pdfs", "coarse_grained_field", "mask", "number_of_columns"])
+
+    def point_density_frequence(self, points2d, divs, debug=True, axe_len_X=100, axe_len_Y=100) -> FeatureKinds:
         edges_and_points = numpy.vstack((points2d, self.edges))
         edges_and_points = self.normalized(edges_and_points)
 
@@ -401,18 +375,8 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         number_of_columns = self.number_of_columns(density2D=fine_grained_field.T)
 
         mask = self.header_footer_mask(fine_grained_field, fine_grained_pdfs, edges_and_points[:-4], number_of_columns, divs)
-        return coarse_grained_pdfs, coarse_grained_field, mask
+        return self.FeatureKinds(coarse_grained_pdfs, coarse_grained_field, mask, number_of_columns)
 
-    def number_of_columns(self, density2D):
-        peaks_at_height_steps = []
-        for height in range(
-                int(config.page_array_model * 0.1),
-                int(config.page_array_model * 0.9),
-                int(config.page_array_model * 0.05)):
-            peaks, _ = find_peaks(density2D[height], distance=20, prominence=0.0005)
-            peaks_at_height_steps.append(peaks)
-        lens = [len(peaks) for peaks in peaks_at_height_steps]
-        return self.most_common_value(lens)
 
     def most_common_value(self, values, constraint=None):
         if constraint:
@@ -431,27 +395,16 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
     def collect_all_divs(self, soup):
         return soup.select('div[class*=x]')
 
-    def hv_border(self, points2d):
-        max_coord = points2d[1, :].max()
-        xrow = numpy.array([0] + points2d[1, :].tolist() + [max_coord + 10])
-
-        dx = list(zip(*list((a, b-a) for (a,b) in more_itertools.pairwise(sorted(xrow)))))
-        fun = scipy.interpolate.interp1d(*dx)
-        minx = points2d[1, :].min()
-        maxx = points2d[1, :].max()
-        n_values = complex(config.page_array_model)
-        try:
-            y = fun(numpy.mgrid[minx : maxx : n_values])
-            h_peaks, _ = find_peaks(y, distance=25, prominence=0.0000009)
-            plt.hist(y, bins=len(y), normed=True)
-        except ValueError:
-            logging.error("out of interpolation range")
-
-        if len(h_peaks) == 1:
-            return numpy.full_like(points2d, True)
-
-        if len(h_peaks) > 1:
-            logging.info("found some page with header or footnote?")
+    def number_of_columns(self, density2D):
+        peaks_at_height_steps = []
+        for height in range(
+                int(config.page_array_model * 0.1),
+                int(config.page_array_model * 0.9),
+                int(config.page_array_model * 0.05)):
+            peaks, _ = find_peaks(density2D[height], distance=15, prominence=0.0001)
+            peaks_at_height_steps.append(peaks)
+        lens = [len(peaks) for peaks in peaks_at_height_steps]
+        return self.most_common_value(lens)
 
     def header_footer_mask(self, field, pdfs, points, number_of_culumns, divs):
         mask = numpy.full_like(pdfs, False).astype(bool)
@@ -511,14 +464,14 @@ class TestPaperReader(unittest.TestCase):
         for path in files:
             path = str(path)
             kwargs = {}
-            kwargs['html_path_before'] = path
-            kwargs['html_path_after']  = path + ".computed.htm"
+            kwargs['html_read_from'] = path
+            kwargs['html_write_to']  = path + ".computed.htm"
             columns = int(regex.search(r"\d", path).group(0))
-            self.tfu_pdf.convert_and_index(**kwargs)
-            print(self.tfu_pdf.number_columns, columns)
-            assert self.tfu_pdf.number_columns == columns
-            assert self.tfu_pdf.indexed_words
-            assert os.path.exists(kwargs['html_path_after'])
+
+            pdf_obj = self.tfu_pdf.convert_and_index(**kwargs)
+            pdf_obj.verify(serious=True)
+            assert pdf_obj.columns == columns
+            assert os.path.exists(kwargs['html_write_to'])
 
 
     def xtest_columns_and_file_existence(self):

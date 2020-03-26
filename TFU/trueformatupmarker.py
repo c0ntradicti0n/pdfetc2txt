@@ -16,6 +16,7 @@ import numpy
 from regex import regex
 
 import config
+from TFU.pdf import Pdf
 
 
 class TrueFormatUpmarker(object):
@@ -41,9 +42,10 @@ class TrueFormatUpmarker(object):
         delimiters = r" ", r"\n"
         self.splitter = '|'.join(map(regex.escape, delimiters))
 
-    def convert_and_index(self, html_path_before="", html_path_after=""):
-        logging.warning(f"working on {html_path_before}")
-        self.generate_css_tagging_document(html_path_before, html_path_after)
+    def convert_and_index(self, html_read_from="", html_write_to=""):
+        logging.warning(f"working on {html_read_from}")
+        self.pdf_obj = Pdf()
+        return self.generate_css_tagging_document(html_read_from, html_write_to)
 
     def get_indexed_words(self):
         return self.indexed_words
