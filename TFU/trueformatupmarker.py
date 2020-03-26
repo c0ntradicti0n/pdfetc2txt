@@ -74,8 +74,8 @@ class TrueFormatUpmarker(object):
             self.add_text_coverage_markup(soup)
 
     def get_css(self, soup):
-        css_parts = soup.select('style[type="text/css"]')
-        big_css = max(css_parts, key=lambda x: len(x.string))
+        css_parts = [tag for tag in soup.select('style[type="text/css"]') if isinstance(tag, Tag)]
+        big_css = max(css_parts, key=lambda x: len(x.text))
         style_rules = tinycss.make_parser().parse_stylesheet(big_css.string, encoding="utf8").rules
         style_dict = OrderedDict(self.css_rule2entry(rule) for rule in style_rules)
         if None in style_dict:
