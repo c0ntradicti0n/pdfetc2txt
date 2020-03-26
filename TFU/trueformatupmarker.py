@@ -1,17 +1,19 @@
-import itertools
+import bs4
+import tinycss
+
+
 import json
 import logging
 from collections import namedtuple
-from typing import NamedTuple
+from typing import List
+from zipp import OrderedDict
+
+import itertools
+import more_itertools
 
 import numpy
-import tinycss
-from bs4 import Tag, NavigableString
-from more_itertools import flatten
+
 from regex import regex
-from tinycss.css21 import RuleSet
-from zipp import OrderedDict
-from pprint import pformat
 
 import config
 
@@ -41,7 +43,7 @@ class TrueFormatUpmarker(object):
 
     def convert_and_index(self, html_path_before="", html_path_after=""):
         logging.warning(f"working on {html_path_before}")
-        self.generate_css_tagging_document(html_path_before, html_path_after, "/debug")
+        self.generate_css_tagging_document(html_path_before, html_path_after)
 
     def get_indexed_words(self):
         return self.indexed_words
@@ -60,21 +62,21 @@ class TrueFormatUpmarker(object):
         soup.head.style.append(z_style)
 
     def manipulate_document(self,
-                            soup,
+                            divs: List,
+                            soup: bs4.BeautifulSoup,
                             **kwargs
                             ):
         self.indexed_words = {}  # reset container for words
         self.count_i = itertools.count()  # counter for next indices for new html-tags
-        text_divs = self.collect_all_divs(soup)
         self.index_words(soup=soup,
+                         divs=divs,
                          **kwargs,
-                         text_divs=text_divs
                          )
         if self.debug:
             self.add_text_coverage_markup(soup)
 
     def get_css(self, soup):
-        css_parts = [tag for tag in soup.select('style[type="text/css"]') if isinstance(tag, Tag)]
+        css_parts = [tag for tag in soup.select('style[type="text/css"]') if isinstance(tag, bs4.Tag)]
         big_css = max(css_parts, key=lambda x: len(x.text))
         style_rules = tinycss.make_parser().parse_stylesheet(big_css.string, encoding="utf8").rules
         style_dict = OrderedDict(self.css_rule2entry(rule) for rule in style_rules)
@@ -83,7 +85,7 @@ class TrueFormatUpmarker(object):
         return style_dict
 
     def css_rule2entry(self, rule):
-        if isinstance(rule, RuleSet):
+        if isinstance(rule, tinycss.css21.RuleSet):
             decla = rule.declarations
             ident = [sel for sel in rule.selector if sel.type == 'IDENT'][0].value
             if not isinstance(ident, str):
@@ -106,7 +108,7 @@ class TrueFormatUpmarker(object):
                 splitted = line.split(d)
                 # flattenning double list is done because two things splitted on tokens need
                 # to be splittted into three: token, delimiter, token
-                intermediate_list.extend(flatten([[e, d] if i < len(splitted) - 1 else [e]
+                intermediate_list.extend(more_itertools.flatten([[e, d] if i < len(splitted) - 1 else [e]
                                                   for i, e in enumerate(line.split(d)) if e]))
             words = intermediate_list
         words = [word.strip() for word in words if word.strip()]
@@ -132,20 +134,14 @@ class TrueFormatUpmarker(object):
 
     def index_words(self,
                     soup,  # for generating new tags
-                    sorting,
-                    text_divs,
+                    divs,
                     clusters_dict
                     ):
         """
             splitter is a function that gives back a list of 2-tuples, that mean the starting index,
             where to replace and list of tokens
         """
-        space = soup.new_tag("span", {'class': '_'})
-        space.append(" ")
-        if sorting:
-            text_divs = [text_divs[i] for i in sorting]
-
-        for div_index, text_div in enumerate(text_divs):
+        for div_index, text_div in enumerate(divs):
             if div_index == self.CUT:
                 # If here was observed a possible cut, append it to slice the text here possibly.
                 self.cuts.append(self.id)
@@ -174,12 +170,12 @@ class TrueFormatUpmarker(object):
 
             self.indexed_words.update(dict(indexing_css_update))
 
-
     IndexedDivContent = namedtuple("IndexedDivContent", ["div_content_index", "indexed_word_tags"])
+
     def tags_to_change(self, debug_percent, soup, text_div) -> IndexedDivContent :
         x = 1
         for div_tag_index, content in enumerate(text_div.contents):
-            if isinstance(content, NavigableString):
+            if isinstance(content, bs4.NavigableString):
                 words = TrueFormatUpmarker.tokenize_differential_signs(content)
                 new_tags = [
                     self.make_new_tag(

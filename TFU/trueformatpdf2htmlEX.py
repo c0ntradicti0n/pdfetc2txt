@@ -1,41 +1,29 @@
-import json
 import os
 import pathlib
-from collections import OrderedDict, Counter, defaultdict, namedtuple
+import bs4
+
+from collections import Counter, defaultdict, namedtuple
+import more_itertools
 import itertools
-from statistics import stdev
 from typing import List, Dict
 
-import more_itertools
 import numpy
 import pandas
-import regex
 import scipy
-from fastkde import fastKDE
-from more_itertools.recipes import flatten
-from numpy import mean
-from scipy import stats
+import hdbscan
+
 from scipy.ndimage import gaussian_filter
 from scipy.signal import find_peaks
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pprint
-
-from scipy.stats import norm
-from sklearn.neighbors import KernelDensity
+import regex
 
 import config
 from Exceptions.ConversionException import EmptyPageConversionError
 from TFU.trueformatupmarker import TrueFormatUpmarker
 from helpers.color_logger import *
-import bs4
-import tinycss
-from bs4 import Tag
-from tinycss.css21 import RuleSet
-import hdbscan
-
-from helpers.list_tools import threewise
-from helpers.programming import overrides
 from helpers.str_tools import insert_at_index
 
 
@@ -52,12 +40,6 @@ class Page_Features:
     density = 9
     label_ = 10
     index_ = 11
-
-
-def normalized(a, axis=-1, order=2):
-    l2 = numpy.atleast_1d(numpy.linalg.norm(a, order, axis))
-    l2[l2 == 0] = 1
-    return a / numpy.expand_dims(l2, axis)
 
 algorithms = ['best', 'generic', 'prims_kdtree', 'prims_balltree', 'boruvka_kdtree', 'boruvka_balltree']
 metrics = {'braycurtis': hdbscan.dist_metrics.BrayCurtisDistance,
@@ -86,28 +68,8 @@ metrics = {'braycurtis': hdbscan.dist_metrics.BrayCurtisDistance,
            'sokalsneath': hdbscan.dist_metrics.SokalSneathDistance,
            'wminkowski': hdbscan.dist_metrics.WMinkowskiDistance}
 
-NORMAL_TEXT = list(
-    'used are variants of the predicate calculus. He  even says, Lately '
-    'those who think  they ought to be so regarded seem to  be winning. '
-    'Under these circumstances, it does seem odd for McDermott to devote '
-    'much space to  complaining about the logical basis  of a book whose '
-    'very title proclaims  it is about logical foundations. In any  '
-    'case, given such a title, it wouldnt  seem necessary that readers '
-    'should  be warned that the foundations being  explored are not 100'
-    'In competition with this diversity  is the idea of a unified model '
-    'of inference. The desire for such a model is  strong among those '
-    'who study  declarative representations, and  Genesereth and Nilsson '
-    'are no exception. As are most of their colleagues,  they are drawn '
-    'to the model of inference as the derivation of conclusions  that '
-    'are entailed by a set of beliefs.  They wander from this idea in a '
-    'few  places but not for long. It is not hard  to see why: Deduction '
-    'is one of the  fews kinds of inference for which we  have an '
-    'interesting general theory. tively. The genotyping frequency was 91%  of occupational asthma and trichloramine'
-    'sensitization have been described in pool life-'.lower()
-)
-
 class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
-    def generate_css_tagging_document(self, html_before_path, html_after_path, debug_folder):
+    def generate_css_tagging_document(self, html_before_path, html_after_path):
         """
         This manipulates an html-file from the result of pdf2htmlEX, that inserts word for word tags with css ids
         to apply markup to these words only with a css-file, without changing this document again.
@@ -115,7 +77,6 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         This has to restore the semantics of the layout, as the reading sequence of left right, top to bottom,
         column for column, page for page. Other layout things should disappear from the text sequence.
         """
-        print(os.getcwd())
         with open(html_before_path, 'r', encoding='utf8') as f:
             soup = bs4.BeautifulSoup(f.read(), features='lxml')
 
@@ -133,83 +94,26 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
             'min_samples' :  50
         }
 
-        if not self.parameterize:
-            self.generate_css_tagging_document_(
-                features=features,
-                manipulated_html_file_path=html_before_path,
-                debug_path=html_after_path,
-                hdbscan_kwargs=hdbscan_kwargs
-            )
-        else:
-            range_cluster_selection_epsilon = self.create_eval_range(0.455, sigma=0.1, resolution=0.33)
-            range_min_cluster_size = self.create_eval_range(210, sigma=0.3, resolution=0.33)
-            range_min_samples = self.create_eval_range(36, sigma=0.3, resolution=0.33)
-            range_alpha = self.create_eval_range(0.99, sigma=0.3, resolution=0.33)
-
-            for epsilon in range_cluster_selection_epsilon:
-                for cluster_size in range_min_cluster_size:
-                    for samples in range_min_samples:
-                        for alpha in range_alpha:
-                            for algorithm in [ 'boruvka_kdtree', 'generic', 'prims']:
-                                for metric in [ 'l1', 'l2', 'hamming', 'infinity', 'p', 'chebyshev', 'cityblock', 'braycurtis', 'euclidean']:
-                                        file_in_folder = insert_at_index(html_after_path,
-                                                                         html_after_path.rfind("/"),
-                                                                         debug_folder)
-                                        parametrerized_file_in_folder = insert_at_index(
-                                            file_in_folder,
-                                            file_in_folder.rfind("/") + 1,
-                                            f"e-{epsilon:.2f},a-{alpha:.2f},"
-                                            f"cs-{int(cluster_size)},s-{int(samples)},"
-                                            f"m-{metric},a-{algorithm}")
-
-                                        # Following function is so overbusted with parameters to test all features and to precompute some data for experimenting
-                                        self.generate_css_tagging_document_(# input, output destination to write file in the same form
-                                                                            manipulated_html_file_path=html_before_path,
-                                                                            debug_path=parametrerized_file_in_folder,
-
-                                                                             # precomputed data as input
-                                                                            selected_divs=features.divs,
-                                                                            coords=features.coords,
-                                                                            data=features.data,
-                                                                            density_field=features.density_field,
-
-                                                                            # clustering parameters
-                                                                            algorithm=algorithm,
-                                                                            alpha=alpha,
-                                                                            cluster_size=cluster_size,
-                                                                            epsilon=epsilon,
-                                                                            metric=metric,
-                                                                            samples = samples
-                                                                            )
-
-    def generate_css_tagging_document_(self, features,
-                                       manipulated_html_file_path,
-                                       debug_path,
-                                       hdbscan_kwargs
-                                       ):
         reading_sequence_sorted_and_indexed_divs, indices_to_clusters = \
             self.HDBSCAN_cluster_divs(
-            features_to_use=[
-                Page_Features.left,
-                Page_Features.density,
-                Page_Features.font_size,
-            ],
-            features=features,
-            debug_path=debug_path,
-            hdbscan_kwargs=hdbscan_kwargs
+                features=features,
+                features_to_use=[
+                    Page_Features.left,
+                    Page_Features.density,
+                    Page_Features.font_size,
+                ],
+                debug_path=html_after_path,
+                hdbscan_kwargs=hdbscan_kwargs
         )
 
-        with open(manipulated_html_file_path, 'r', encoding='utf8') as f:
-            soup = bs4.BeautifulSoup(f.read(), features='lxml')
-
         self.manipulate_document(soup=soup,
-                                 sorting=reading_sequence_sorted_and_indexed_divs,
+                                 divs=reading_sequence_sorted_and_indexed_divs,
                                  clusters_dict=indices_to_clusters,
                                  )
 
         # sanitizing
         # change '<' and '>' mail adress of pdf2htmlEX-author, because js thinks, it's a tag
-        with open(debug_path, "w",
+        with open(html_after_path, "w",
                   encoding='utf8') as file:
             file.write(str(soup).replace("<coolwanglu@gmail.com>", "coolwanglu@gmail.com"))
 
@@ -303,10 +207,11 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
                          for cluster_label, cluster in clusters
                          for features in cluster}
 
-        div_reading_sequence = [features[Page_Features.index_]
+        index_reading_sequence = [features[Page_Features.index_]
                                 for page, clusters in page_cluster_lr_groups.items()
                                 for cluster_label, cluster in clusters
                                 for features in cluster]
+        div_reading_sequence = [features.divs[i] for i in index_reading_sequence]
 
         return TrueFormatUpmarkerPdf2HTMLEX.SortedClusteredDivs(div_reading_sequence, clusters_dict)
 
@@ -314,7 +219,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
     def extract_features(self, soup, css_dict) -> FeatureStuff:
         # Collect divs (that they have an x... attribute, that is generated by pdf2htmlEX)
         pages_list = list(self.fmr_pages(soup))
-        page2divs = self.collect_pages_dict(pages_list)
+        page_to_divs = self.collect_pages_dict(pages_list)
         all_divs = self.collect_all_divs(soup)
 
         # Generate positional features
@@ -323,7 +228,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
             2 + page_number,
             len(div.text),
             0]  # ks_2samp(NORMAL_TEXT, list(div.text.lower())).pvalue *100 if div.text else 0]
-            for page_number, divs in enumerate(page2divs) for div in divs]
+            for page_number, divs in enumerate(page_to_divs) for div in divs]
         assert (len(hs_xs_ys) == len(text_prob))
         data = [list(hxy) + tp for hxy, tp in zip(hs_xs_ys, text_prob)]
         # Filter features based on margins
@@ -333,26 +238,35 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
                 else tuple([0] * 9)
                 for pf in data
                 ]
+
         # Density feature from positional features
         data = numpy.array(data)
         try:
             coords = data.T[[Page_Features.left, Page_Features.bottom]]
             page_coords = data.T[[Page_Features.page_number, Page_Features.left, Page_Features.bottom]].T
-            page_2_coords  = numpy.split(page_coords[:, 1:], numpy.cumsum(numpy.unique(page_coords[:, 0], return_counts=True)[1])[:-1])
+            page_to_coords = numpy.split(
+                page_coords[:, 1:],
+                numpy.cumsum(
+                    numpy.unique(page_coords[:, 0],
+                                 return_counts=True
+                                 )[1]
+                )[:-1]
+            )
         except IndexError:
             raise EmptyPageConversionError
 
-        densities_at_points, density_field, mask = self.point_density_frequence_per_page(page_2_coords, debug=True)
-
+        densities_at_points, density_field, mask = self.point_density_frequence_per_page(page_to_coords, page_to_divs, debug=True)
         data = numpy.column_stack((data, densities_at_points))
+
         relevant_divs = [div for div, to_use in zip(all_divs, mask) if to_use]
         relevant_coords = coords[:, mask]
         relevant_data = data[mask]
+
         return TrueFormatUpmarkerPdf2HTMLEX.FeatureStuff(relevant_divs, relevant_coords, relevant_data, density_field)
 
     def collect_pages_dict(self, pages):
-        page2divs = [page.select('div[class*=x]') for page in pages]
-        return page2divs
+        page_to_divs = [page.select('div[class*=x]') for page in pages]
+        return page_to_divs
 
     def get_pdf2htmlEX_header(tag):
         return tag.attrs['class'][3]
@@ -446,8 +360,20 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         hxys[3] = int(hxys[3] / resolution) * resolution
         return hxys
 
-    def point_density_frequence_per_page (self, pages_2_points, **kwargs):
-        coords_densities, fields, masks = list(zip(*[self.point_density_frequence(points2D=points2D, **kwargs) for points2D in pages_2_points]))
+    def point_density_frequence_per_page (self, pages_to_points, pages_to_divs, **kwargs):
+        # map computation to page
+        coords_densities, fields, masks = \
+            list(
+                zip(*[
+                    self.point_density_frequence(
+                        points2d=points2d,
+                        divs=pages_to_divs[page_number],
+                        **kwargs)
+                    for page_number, points2d in enumerate(pages_to_points)
+                    ]
+                    )
+            )
+        # filter, reduce
         return numpy.hstack(coords_densities), sum(f for i, f in enumerate(fields)), numpy.hstack(masks)
 
     edges = numpy.array(
@@ -456,8 +382,8 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
     def normalized(self, a):
         return a/[a_line.max()-a_line.min() for a_line in a.T]
 
-    def point_density_frequence(self, points2D, debug=True, axe_len_X=100, axe_len_Y=100):
-        edges_and_points = numpy.vstack((points2D, self.edges))
+    def point_density_frequence(self, points2d, divs, debug=True, axe_len_X=100, axe_len_Y=100):
+        edges_and_points = numpy.vstack((points2d, self.edges))
         edges_and_points = self.normalized(edges_and_points)
 
         indices = (edges_and_points[:-4] * [axe_len_X, axe_len_Y]).astype(int)
@@ -471,7 +397,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         fine_grained_field =  gaussian_filter(dotted, sigma=0.5)
         fine_grained_pdfs = fine_grained_field [indices[:,0], indices[:,1]]
 
-        mask = self.header_footer_mask(fine_grained_field, fine_grained_pdfs, edges_and_points[:-4])
+        mask = self.header_footer_mask(fine_grained_field, fine_grained_pdfs, edges_and_points[:-4], divs)
         return coarse_grained_pdfs, coarse_grained_field, mask
 
     def number_of_columns(self, density2D):
@@ -524,7 +450,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         if len(h_peaks) > 1:
             logging.info("found some page with header or footnote?")
 
-    def header_footer_mask(self, field, pdfs, points):
+    def header_footer_mask(self, field, pdfs, points, divs):
         mask = numpy.full_like(pdfs, True).astype(bool)
 
         if  len(pdfs) > 10:
@@ -535,22 +461,23 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
             indices = numpy.array(range(len(index_to_Y)))
             d0y = 0
             for i, dy in enumerate(dY):
-                if dy < 0.01:
+                if dy < 0.001:
                     dY[i] = d0y
                 else:
                     d0y = dy
 
-            norm_distance = self.most_common_value(dY, constraint=lambda x: x != 0)
-            distance_std = numpy.std([d for d in dY if abs(d) < 0.03])
+            norm_distance = numpy.median(dY)
+            distance_std = numpy.std([d for d in dY if abs(d) < norm_distance*2])
 
-            valid_points_at = numpy.logical_or(dY < norm_distance - distance_std,
+            invalid_points_at = numpy.logical_or(dY < norm_distance - distance_std,
                                                dY > norm_distance + distance_std)
 
-            valid_points_at = numpy.hstack((valid_points_at,[False]))
-            valid_points_shift = numpy.hstack(([False], valid_points_at[:-1]))
+            invalid_points_at = numpy.hstack((invalid_points_at,[False]))
+            invalid_points_shift = numpy.hstack(([False], invalid_points_at[:-1]))
 
-            bad_indices = indices[numpy.logical_or(valid_points_at, valid_points_shift)]
+            bad_indices = indices[numpy.logical_or(invalid_points_at, invalid_points_shift)]
             mask[bad_indices] = False
+            logging.debug(f"Header/Footer in: " +'\n'.join([str(divs[i]) for i in bad_indices]))
         return mask
 
 import unittest
@@ -564,7 +491,7 @@ class TestPaperReader(unittest.TestCase):
             path = str(path)
             kwargs = {}
             kwargs['html_path_before'] = path
-            kwargs['html_path_after'] = path + ".computed.html"
+            kwargs['html_path_after']  = path + ".computed.htm"
             columns = int(regex.search(r"\d", path).group(0))
             self.tfu_pdf.convert_and_index(**kwargs)
             print(self.tfu_pdf.number_columns, columns)
