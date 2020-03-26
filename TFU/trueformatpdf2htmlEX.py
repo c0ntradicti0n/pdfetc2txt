@@ -24,6 +24,7 @@ import config
 from Exceptions.ConversionException import EmptyPageConversionError
 from TFU.trueformatupmarker import TrueFormatUpmarker
 from helpers.color_logger import *
+from helpers.list_tools import threewise
 from helpers.str_tools import insert_at_index
 
 
@@ -397,7 +398,9 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         fine_grained_field =  gaussian_filter(dotted, sigma=0.5)
         fine_grained_pdfs = fine_grained_field [indices[:,0], indices[:,1]]
 
-        mask = self.header_footer_mask(fine_grained_field, fine_grained_pdfs, edges_and_points[:-4], divs)
+        number_of_columns = self.number_of_columns(density2D=fine_grained_field.T)
+
+        mask = self.header_footer_mask(fine_grained_field, fine_grained_pdfs, edges_and_points[:-4], number_of_columns, divs)
         return coarse_grained_pdfs, coarse_grained_field, mask
 
     def number_of_columns(self, density2D):
@@ -406,7 +409,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
                 int(config.page_array_model * 0.1),
                 int(config.page_array_model * 0.9),
                 int(config.page_array_model * 0.05)):
-            peaks, _ = find_peaks(density2D[height], distance=20, prominence=0.05)
+            peaks, _ = find_peaks(density2D[height], distance=20, prominence=0.0005)
             peaks_at_height_steps.append(peaks)
         lens = [len(peaks) for peaks in peaks_at_height_steps]
         return self.most_common_value(lens)
@@ -450,34 +453,52 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         if len(h_peaks) > 1:
             logging.info("found some page with header or footnote?")
 
-    def header_footer_mask(self, field, pdfs, points, divs):
-        mask = numpy.full_like(pdfs, True).astype(bool)
+    def header_footer_mask(self, field, pdfs, points, number_of_culumns, divs):
+        mask = numpy.full_like(pdfs, False).astype(bool)
 
         if  len(pdfs) > 10:
-            index_to_Y = sorted(enumerate(points[:,1]), key=lambda x:x[1])
+            indexed_points = list(enumerate(points))
+            indices = numpy.array(range(len(points)))
+            # raw column sorting
+            x_sorted_points = [(int(indexed_point[1][0] / (0.7 / number_of_culumns)), indexed_point) for indexed_point in indexed_points]
+            # raw top down sorting
+            xy_sorted_points = sorted(x_sorted_points, key=lambda x:x[0] - x[1][1][1])
 
-            index_to_yD = {i1: numpy.abs(b - a) for (i1, a), (i2, b) in more_itertools.pairwise(index_to_Y) }
-            dY = list(index_to_yD.values())
-            indices = numpy.array(range(len(index_to_Y)))
-            d0y = 0
-            for i, dy in enumerate(dY):
-                if dy < 0.001:
-                    dY[i] = d0y
+            y_sorted_indexed_points = [(len(points)+1,0)] + \
+                                      [(column_index_point_tuple[1][0], column_index_point_tuple[1][1][1])
+                                          for column_index_point_tuple
+                                          in xy_sorted_points] + \
+                                      [(len(points)+2,1)]
+
+            indexed_distances = [(i2, (numpy.abs(b - a), numpy.abs(c - b)))
+                                for (i1, a), (i2, b), (i3, c)
+                                in threewise(y_sorted_indexed_points)]
+            dY = list(id[1] for id in indexed_distances)
+            dI = numpy.array(list(id[0] for id in indexed_distances))
+
+            # If there are text boxes on the same height, the distance will be very small due to rounding,
+            # replace them with the value for the textbox in the same line
+            threshold = 0.00001
+            d0y1 = 0
+            d0y2 = 0
+            for i, (dy1, dy2) in enumerate(dY):
+                if dy1 < threshold:
+                    dY[i] = (d0y1, dy2)
                 else:
-                    d0y = dy
+                    d0y1 = dy1
+                if dy1 < threshold:
+                    dY[i] = (dy1, d0y2)
+                else:
+                    d0y2 = dy2
 
-            norm_distance = numpy.median(dY)
-            distance_std = numpy.std([d for d in dY if abs(d) < norm_distance*2])
+            norm_distance = numpy.median(list(more_itertools.flatten(dY)))
+            distance_std = norm_distance * 0.1
+            logging.debug(f"median {norm_distance} std {distance_std}")
 
-            invalid_points_at = numpy.logical_or(dY < norm_distance - distance_std,
-                                               dY > norm_distance + distance_std)
 
-            invalid_points_at = numpy.hstack((invalid_points_at,[False]))
-            invalid_points_shift = numpy.hstack(([False], invalid_points_at[:-1]))
-
-            bad_indices = indices[numpy.logical_or(invalid_points_at, invalid_points_shift)]
-            mask[bad_indices] = False
-            logging.debug(f"Header/Footer in: " +'\n'.join([str(divs[i]) for i in bad_indices]))
+            valid_points_at = numpy.logical_and(dY > norm_distance - distance_std, dY < norm_distance + distance_std).any(axis=1)
+            good = indices[dI[valid_points_at]]
+            mask[good] = True
         return mask
 
 import unittest
