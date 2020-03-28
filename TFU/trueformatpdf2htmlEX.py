@@ -5,7 +5,7 @@ import bs4
 from collections import Counter, defaultdict, namedtuple
 import more_itertools
 import itertools
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 import numpy
 import pandas
@@ -23,9 +23,11 @@ import regex
 import config
 from Exceptions.ConversionException import EmptyPageConversionError
 from TFU.pdf import Pdf
+from TFU.trial_tools import range_parameter
 from TFU.trueformatupmarker import TrueFormatUpmarker
 from helpers.color_logger import *
-from helpers.list_tools import threewise
+from helpers.list_tools import threewise, third_fractal
+
 
 class Page_Features:
     page_number = 6
@@ -69,6 +71,16 @@ metrics = {'braycurtis': hdbscan.dist_metrics.BrayCurtisDistance,
            'wminkowski': hdbscan.dist_metrics.WMinkowskiDistance}
 
 class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
+    hdbscan_kwargs = {
+        'algorithm': 'boruvka_balltree',
+        'metric': 'hamming',
+        'cluster_selection_epsilon': 0.5,
+        'cluster_selection_method': 'leaf',
+        'alpha': 0.95,
+        'min_cluster_size': 0.7,
+        'min_samples': 0.4
+    }
+
     def generate_css_tagging_document(self, html_read_from="", html_write_to="", parameterizing=False):
         """
         This manipulates an html-file from the result of pdf2htmlEX, that inserts word for word tags with css ids
@@ -85,35 +97,28 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         css_dict = self.get_css(soup)
         features = self.extract_features(soup=soup, css_dict=css_dict)
 
-        self.pdf_obj.columns = self.len_columns
-
-
         hdbscan_kwargs = {
             'algorithm': 'boruvka_balltree',
             'metric': 'hamming',
             'cluster_selection_epsilon': 0.5,
             'cluster_selection_method': 'leaf',
             'alpha': 0.95,
-            'min_cluster_size': int((len(features.divs) * 0.7) / self.len_columns),
-            'min_samples': int((len(features.divs) * 0.4) / self.len_columns)
+            'min_cluster_size': int((len(features.divs) * 0.7 / self.number_columns)),
+            'min_samples': int((len(features.divs) * TrueFormatUpmarkerPdf2HTMLEX.hdbscan_kwargs["min_samples"] / self.number_columns))
         }
 
-        reading_sequence_sorted_and_indexed_divs, indices_to_clusters = \
-            self.HDBSCAN_cluster_divs(
+        self.pdf_obj.columns = self.number_columns
+
+
+        self.HDBSCAN_cluster_divs(
                 features=features,
-                features_to_use=[
-                    Page_Features.left,
-                    Page_Features.density,
-                    Page_Features.font_size,
-                ],
+                features_to_use=["x", "font-size"],
                 debug_path=html_write_to,
                 hdbscan_kwargs=hdbscan_kwargs
-        )
+                )
 
         self.manipulate_document(soup=soup,
-                                 divs=reading_sequence_sorted_and_indexed_divs,
-                                 clusters_dict=indices_to_clusters,
-                                 )
+                                 features=features)
 
         # sanitizing
         # change '<' and '>' mail adress of pdf2htmlEX-author, because js thinks, it's a tag
@@ -124,16 +129,15 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         self.pdf_obj.text = " ".join(self.indexed_words.values())
         self.pdf_obj.indexed_words = self.indexed_words
 
-        return self.pdf_obj
 
 
-    def fmr_pages(self, soup):
+    def get_page_tags(self, soup):
         return soup.select("div[data-page-no]")
 
     SortedClusteredDivs = namedtuple("SortedClusteredDivs", ["reading_sequence", "index_to_clusters"])
     def HDBSCAN_cluster_divs(self,
-                             features_to_use:List[int],
-                             features,
+                             features_to_use: List[str],
+                             features: pandas.DataFrame,
                              debug_path: str ="/debug_pics/output.png",
                              debug: bool = True,
                              hdbscan_kwargs: Dict = {}) -> SortedClusteredDivs:
@@ -144,136 +148,104 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
 
         # Clustering
         clusterer = hdbscan.HDBSCAN(**hdbscan_kwargs)
-        clusterer.fit(features.data[:, features_to_use])
+        clusterer.fit(features[features_to_use])
         threshold = pandas.Series(clusterer.outlier_scores_).quantile(0.85)
         outliers = numpy.where(clusterer.outlier_scores_ > threshold)[0]
 
         # Determine number of clusters
-        number_columns = self.number_of_columns(density2D=features.density_field.T)
-        self.number_columns = number_columns
-        logging.info(f"detected {number_columns} columns")
+
+        logging.debug(f"detected {self.number_columns} columns")
         what_clusters = set(clusterer.labels_)
 
-        if number_columns == len(what_clusters):
+        if self.number_columns == len(what_clusters):
             self.take_outliers = True
-        elif number_columns  < len(what_clusters) * 0.33:
-            logging.warning("found unrealistic number of clusters, so I just take all")
+        elif self.number_columns  < len(what_clusters) * 0.33:
+            logging.error("found unrealistic number of clusters, so I just take all")
             self.take_outliers = True
             clusterer.labels_ = [0]* len(clusterer.labels_)
         else:
             self.take_outliers = False
 
-
-
         cluster_counts = Counter([l for l in clusterer.labels_ if self.take_outliers or l > -1])
-        relevant_clusters = sorted(cluster_counts, key=cluster_counts.get)[-number_columns:]
+        relevant_clusters = sorted(cluster_counts, key=cluster_counts.get)[-self.number_columns:]
 
-        logging.info(f"which clusters are there? {what_clusters}")
-        logging.info(f"number of relevant columns {number_columns}")
-        logging.info(f"these are {relevant_clusters}")
-        logging.info(f"how many content items in columns {cluster_counts}")
-        logging.info(f"using outliers also for column? {str(self.take_outliers).lower()}")
+        logging.debug(f"which clusters are there? {what_clusters}")
+        logging.debug(f"number of relevant columns {self.number_columns}")
+        logging.debug(f"these are {relevant_clusters}")
+        logging.debug(f"how many content items in columns {cluster_counts}")
+        logging.debug(f"using outliers also for column? {str(self.take_outliers).lower()}")
 
-        if debug:
+        if len(relevant_clusters)==len(cluster_counts):
+            logging.warning("too many outliers, take all")
+            self.take_outliers = True
+
+        """if debug:
             logging.info(f"sorting and detecting textboxes with \n{pprint.pformat(hdbscan_kwargs)}")
-            self.debug_pic(clusterer, features.coords, debug_path, outliers)
+            self.debug_pic(clusterer, numpy.column_stack((features.x, features.y)), debug_path, outliers)
 
-            if len(what_clusters) < number_columns:
+            if len(what_clusters) < self.number_columns:
                 logging.error("Too few columns found")
                 logging.warning("#### Take all debugging ####")
                 self.take_outliers = True
-                clusterer.labels_ = [0] * len(clusterer.labels_)
+                clusterer.labels_ = [0] * len(clusterer.labels_)"""
 
-        # collecting divs on the page (and append clustering label and index to the features)
-        groups_of_pages = defaultdict(list)
-        for feature_line in zip(*list(features.data.T), clusterer.labels_, range(len(clusterer.labels_))):
-            groups_of_pages[feature_line[Page_Features.page_number]].append(
-                feature_line)
+        features["cluster"] = clusterer.labels_
 
         # sorting groups of clusters within pages
         page_cluster_lr_groups = defaultdict(list)
-        for page, page_group in groups_of_pages.items():
+        for page, page_group in features.groupby(by="page_number"):
             # itertools would break up the clusters, when the clusters are unsorted
             # TODO right to left and up to down!
 
-            page_group = sorted(page_group,
-                                key=lambda r: r[Page_Features.label_])
-            groups_of_clusters = itertools.groupby(page_group,
-                                                   key=lambda s: s[Page_Features.label_])
+            # Assuming, also column labels have been sorted yet from left to right
+            groups_of_clusters = page_group.groupby(by="cluster")
+
             page_cluster_up_bottom_groups = \
-                [(cluster, sorted(cluster_group,
-                                  key=lambda r: r[Page_Features.bottom]))
+                [(cluster, cluster_group.sort_values(by="y"))
                  for cluster, cluster_group in groups_of_clusters
-                 if cluster in relevant_clusters or self.take_outliers
                  ]
+
             page_cluster_lr_groups[page] = \
-                sorted(page_cluster_up_bottom_groups, key=lambda r:
-                min(r[1], key=lambda s: s[Page_Features.left]))
+                sorted(page_cluster_up_bottom_groups, key=lambda c: c[1].x.min())
 
-        clusters_dict = {features[Page_Features.index_]: cluster_label
-                         for page, clusters in page_cluster_lr_groups.items()
-                         for cluster_label, cluster in clusters
-                         for features in cluster}
+        reading_i = itertools.count()  # counter for next indices for new html-tags
 
-        index_reading_sequence = [features[Page_Features.index_]
-                                for page, clusters in page_cluster_lr_groups.items()
-                                for cluster_label, cluster in clusters
-                                for features in cluster]
-        div_reading_sequence = [features.divs[i] for i in index_reading_sequence]
+        features["reading_sequence"] = list(more_itertools.flatten([cluster_content["index"].tolist()
+                                for page_number, page_content in page_cluster_lr_groups.items()
+                                for cluster, cluster_content in page_content
+                                ]))
 
-        return TrueFormatUpmarkerPdf2HTMLEX.SortedClusteredDivs(div_reading_sequence, clusters_dict)
+        if not self.take_outliers:
+            features["relevant"] = features.cluster.isin(relevant_clusters)
+        else:
+            features["relevant"] = True
 
-    FeatureStuff = namedtuple("FeatureStuff", ["divs", "coords", "data", "density_field"])
+
+        self.pdf_obj.pages_to_column_to_text = \
+            features.groupby(by="cluster").apply(lambda x:
+                x.groupby(by="page_number").apply(lambda x:
+                      " ".join([div.text for div in x.divs]))).to_dict()
+        return features
+
+    FeatureStuff = namedtuple("FeatureStuff", ["divs", "coords", "data", "density_field", "labels"])
     def extract_features(self, soup, css_dict) -> FeatureStuff:
+        features = pandas.DataFrame()
+
         # Collect divs (that they have an x... attribute, that is generated by pdf2htmlEX)
-        pages_list = list(self.fmr_pages(soup))
-        page_to_divs = self.collect_pages_dict(pages_list)
-        all_divs = self.collect_all_divs(soup)
+        page_tags = list(self.get_page_tags(soup))
+        page_to_divs = self.collect_pages_dict(page_tags)
+
+        i = itertools.count()
+        features["index"], features["page_number"], features["divs"] = zip(*[(next(i), pn, div) for pn, divs in page_to_divs for div in divs])
+        features["len"] = features.divs.apply(lambda div:len(div.text))
 
         # Generate positional features
-        hs_xs_ys = [list(self.getxyh(tag, css_dict)) for tag in all_divs]
-        text_prob = [[
-            2 + page_number,
-            len(div.text),
-            0]  # ks_2samp(NORMAL_TEXT, list(div.text.lower())).pvalue *100 if div.text else 0]
-            for page_number, divs in enumerate(page_to_divs) for div in divs]
-        assert (len(hs_xs_ys) == len(text_prob))
-        data = [list(hxy) + tp for hxy, tp in zip(hs_xs_ys, text_prob)]
-        # Filter features based on margins
-        data = [pf
-                if pf[Page_Features.bottom] > self.min_bottom
-                   and pf[Page_Features.bottom] < self.max_bottom
-                else tuple([0] * 9)
-                for pf in data
-                ]
-
-        # Density feature from positional features
-        data = numpy.array(data)
-        try:
-            coords = data.T[[Page_Features.left, Page_Features.bottom]]
-            page_coords = data.T[[Page_Features.page_number, Page_Features.left, Page_Features.bottom]].T
-            page_to_coords = numpy.split(
-                page_coords[:, 1:],
-                numpy.cumsum(
-                    numpy.unique(page_coords[:, 0],
-                                 return_counts=True
-                                 )[1]
-                )[:-1]
-            )
-        except IndexError:
-            raise EmptyPageConversionError
-
-        densities_at_points, density_field, mask = self.point_density_frequence_per_page(page_to_coords, page_to_divs, debug=True)
-        data = numpy.column_stack((data, densities_at_points))
-
-        relevant_divs = [div for div, to_use in zip(all_divs, mask) if to_use]
-        relevant_coords = coords[:, mask]
-        relevant_data = data[mask]
-
-        return TrueFormatUpmarkerPdf2HTMLEX.FeatureStuff(relevant_divs, relevant_coords, relevant_data, density_field)
+        self.set_css_attributes(features, css_dict)
+        self.point_density_frequence_per_page(features, debug=True)
+        return features[features.relevance_mask]
 
     def collect_pages_dict(self, pages):
-        page_to_divs = [page.select('div[class*=x]') for page in pages]
+        page_to_divs = [(page_number, page.select('div[class*=x]')) for page_number, page in enumerate(pages)]
         return page_to_divs
 
     def get_pdf2htmlEX_header(tag):
@@ -299,55 +271,37 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
 
     point_before = (0, 0)
 
-    def getxyh(self, tag, css_dict):
-        try:
-            fft, fst, ht, xt, yt = sorted(attr for attr in tag.attrs['class']
+    assinging_features = ['line-height', 'font-size', 'height', 'left',  'bottom']
+    def get_tag_attribute_names(self, tag):
+        return sorted(attr for attr in tag.attrs['class']
                                           if attr.startswith('x') or
                                           attr.startswith('y') or
                                           attr.startswith('h') or
                                           attr.startswith('ff') or
                                           attr.startswith('fs'))
-        except ValueError:
-            #logging.info(f"Tag with missing attributes (containing '{tag.contents}'")
-            return [0] * 6
 
-        resolution = 1
-        hxys = [
-            self.get_declaration_value(css_dict[fft], 'line-height'),
-            self.get_declaration_value(css_dict[fst], 'font-size'),
+    def set_css_attributes(self, features, css_dict):
+        features["tag_attributes"]  = features.divs.apply(self.get_tag_attribute_names)
+        for index, attribute in enumerate(self.assinging_features):
+            features[attribute] = features.tag_attributes.apply(lambda x: self.get_declaration_value(css_dict[x[index]], attribute))
+        features.rename(columns={"bottom":"y", "left":"x"}, inplace=True)
 
-            self.get_declaration_value(css_dict[ht], 'height'),
-            self.get_declaration_value(css_dict[xt], 'left'),
-            self.get_declaration_value(css_dict[yt], 'bottom')
-        ]
-
-        dist = numpy.sqrt(
-            (hxys[3] - self.point_before[0]) ** 2 \
-            + (hxys[4] - self.point_before[1]) ** 2)
-        self.point_before = (hxys[3], hxys[4])
-        dist = int(dist / resolution) * resolution
-        hxys = hxys + [dist]
-        hxys[3] = int(hxys[3] / resolution) * resolution
-        return hxys
-
-    def point_density_frequence_per_page (self, pages_to_points, pages_to_divs, **kwargs):
+    def point_density_frequence_per_page (self, features, **kwargs):
         # map computation to page
-        featrue_kinds = \
-            stacked_feature_kinds = self.FeatureKinds(*list(
-                zip(*[
-                    self.point_density_frequence(
-                        points2d=points2d,
-                        divs=pages_to_divs[page_number],
+        page_groups = features.groupby(by="page_number").apply(
+            lambda page_group: self.analyse_point_density_frequence(
+                        page_group,
                         **kwargs)
-                    for page_number, points2d in enumerate(pages_to_points)
-                    ]
-                    )
-            ))
-        self.len_columns = self.most_common_value(featrue_kinds.number_of_columns)
-        # filter, reduce
-        return numpy.hstack(featrue_kinds.coarse_grained_pdfs), \
-               sum(f for i, f in enumerate(featrue_kinds.coarse_grained_field)), \
-               numpy.hstack(stacked_feature_kinds.mask)
+             ).tolist()
+        other_feature_kinds_stacked = self.FeatureKinds(*list(zip(*page_groups)))
+
+        self.number_columns = self.most_common_value(other_feature_kinds_stacked.number_of_columns)
+
+        features["coarse_grained_pdf"] = numpy.hstack(other_feature_kinds_stacked.coarse_grained_pdfs)
+        coarse_grained_field = sum(f for i, f in enumerate(other_feature_kinds_stacked.coarse_grained_field))
+        features["relevance_mask"] = numpy.hstack(other_feature_kinds_stacked.mask)
+
+        return coarse_grained_field
 
     edges = numpy.array(
         [[0, 0], [0, config.reader_height], [config.reader_width, 0], [config.reader_width, config.reader_height]])
@@ -357,7 +311,8 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
 
     FeatureKinds = namedtuple("FeatureKinds", ["coarse_grained_pdfs", "coarse_grained_field", "mask", "number_of_columns"])
 
-    def point_density_frequence(self, points2d, divs, debug=True, axe_len_X=100, axe_len_Y=100) -> FeatureKinds:
+    def analyse_point_density_frequence(self, page_features, debug=True, axe_len_X=100, axe_len_Y=100) -> FeatureKinds:
+        points2d = numpy.column_stack((page_features.x, page_features.y))
         edges_and_points = numpy.vstack((points2d, self.edges))
         edges_and_points = self.normalized(edges_and_points)
 
@@ -374,9 +329,13 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
 
         number_of_columns = self.number_of_columns(density2D=fine_grained_field.T)
 
-        mask = self.header_footer_mask(fine_grained_field, fine_grained_pdfs, edges_and_points[:-4], number_of_columns, divs)
+        mask = self.header_footer_mask(
+            fine_grained_field,
+            fine_grained_pdfs,
+            edges_and_points[:-4],
+            number_of_columns,
+            page_features.divs)
         return self.FeatureKinds(coarse_grained_pdfs, coarse_grained_field, mask, number_of_columns)
-
 
     def most_common_value(self, values, constraint=None):
         if constraint:
@@ -448,7 +407,6 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
             distance_std = norm_distance * 0.1
             logging.debug(f"median {norm_distance} std {distance_std}")
 
-
             valid_points_at = numpy.logical_and(dY > norm_distance - distance_std, dY < norm_distance + distance_std).any(axis=1)
             good = indices[dI[valid_points_at]]
             mask[good] = True
@@ -456,10 +414,76 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
 
 import unittest
 
+
+class Updater(object):
+    params = {}
+    def __init__(self, params : Dict[
+                                 str, Tuple[float, float, float]]):
+        for param_name, range_tuple in params.items():
+            setattr(self, param_name, range_parameter(range_tuple))
+            self.params[param_name] = range_tuple
+
+    def next(self, str):
+        value = getattr(self, str)
+        return next(value)
+
+    def update(self, choices):
+        best = max(choices)
+        for param, tuple in self.params.items():
+            self.params[param] = third_fractal(choices[best][param], tuple)
+
+    def trials(self):
+        for param in self.params:
+            yield (param, self.next(param))
+
+    def options(self):
+        for change in itertools.chain(self.trials()):
+            yield change
+
 class TestPaperReader(unittest.TestCase):
     tfu_pdf = TrueFormatUpmarkerPdf2HTMLEX(debug=True, parameterize=False)
 
+    def test_a_train(self):
+        updating = {"min_samples": (0.1, 0.5, 0.9)}
+        updater = Updater(updating)
+        files = list(pathlib.Path('test/data').glob('*.html'))
+        for path in files:
+
+            train = True
+
+
+            i = 0
+
+
+            while train:
+                choices = {}
+                i += 1
+                if i>10:
+                    logging.warning(f"reached {self.tfu_pdf.hdbscan_kwargs}")
+                    break
+
+                for option in updater.options():
+
+                    logging.info(f"updating {dict([option])}")
+                    self.tfu_pdf.hdbscan_kwargs.update(dict([option]))
+
+                    path = str(path)
+                    kwargs = {}
+                    kwargs['html_read_from'] = path
+                    kwargs['html_write_to'] = path + ".computed.htm"
+                    columns = int(regex.search(r"\d", path).group(0))
+
+                    pdf_obj = self.tfu_pdf.convert_and_index(**kwargs)
+
+                    score = pdf_obj.verify(serious=True, test_document=True)
+                    logging.info(f"PDF extraction score: {score}")
+
+                    choices[score] = option
+
+            updater.update(choices)
+
     def test_layout_files(self):
+        updater = Updater({"min_samples": (0., 110., 220.)})
         files = list(pathlib.Path('test/data').glob('*.html'))
         for path in files:
             path = str(path)
@@ -469,9 +493,13 @@ class TestPaperReader(unittest.TestCase):
             columns = int(regex.search(r"\d", path).group(0))
 
             pdf_obj = self.tfu_pdf.convert_and_index(**kwargs)
-            pdf_obj.verify(serious=True)
+
+            score = pdf_obj.verify(serious=True, test_document=True)
+            logging.info(f"PDF extraction score: {score}")
+
             assert pdf_obj.columns == columns
             assert os.path.exists(kwargs['html_write_to'])
+
 
 
     def xtest_columns_and_file_existence(self):

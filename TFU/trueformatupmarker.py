@@ -1,4 +1,5 @@
 import bs4
+import pandas
 import tinycss
 
 
@@ -42,10 +43,14 @@ class TrueFormatUpmarker(object):
         delimiters = r" ", r"\n"
         self.splitter = '|'.join(map(regex.escape, delimiters))
 
-    def convert_and_index(self, html_read_from="", html_write_to=""):
+    def convert_and_index(self, html_read_from="", html_write_to="") -> Pdf:
         logging.warning(f"working on {html_read_from}")
         self.pdf_obj = Pdf()
-        return self.generate_css_tagging_document(html_read_from, html_write_to)
+        self.generate_css_tagging_document(html_read_from, html_write_to)
+        self.pdf_obj.indexed_words = self.indexed_words
+        self.pdf_obj.text = " ".join(self.indexed_words.values())
+        return self.pdf_obj
+
 
     def get_indexed_words(self):
         return self.indexed_words
@@ -64,14 +69,14 @@ class TrueFormatUpmarker(object):
         soup.head.style.append(z_style)
 
     def manipulate_document(self,
-                            divs: List,
+                            features: pandas.DataFrame,
                             soup: bs4.BeautifulSoup,
                             **kwargs
                             ):
         self.indexed_words = {}  # reset container for words
         self.count_i = itertools.count()  # counter for next indices for new html-tags
         self.index_words(soup=soup,
-                         divs=divs,
+                         features=features,
                          **kwargs,
                          )
         if self.debug:
@@ -136,36 +141,28 @@ class TrueFormatUpmarker(object):
 
     def index_words(self,
                     soup,  # for generating new tags
-                    divs,
-                    clusters_dict
+                    features
                     ):
         """
             splitter is a function that gives back a list of 2-tuples, that mean the starting index,
             where to replace and list of tokens
         """
-        for div_index, text_div in enumerate(divs):
-            if div_index == self.CUT:
-                # If here was observed a possible cut, append it to slice the text here possibly.
-                self.cuts.append(self.id)
+        features.sort_values(by="reading_sequence", inplace=True)
+        features["debug_color"] = abs(features.cluster + 2) / (10)
+        for index, feature_line in features.iterrows():
 
-            if clusters_dict and div_index not in clusters_dict:
-                # this happens for the page containers
+            if not feature_line.relevant:
                 continue
-            if clusters_dict and not self.take_outliers and clusters_dict[div_index] == -1:
-                # excluding outliers
-                continue
-            if clusters_dict:
-                debug_percent = (abs(clusters_dict[div_index] + 2) / (10))
-            else:
-                debug_percent = 0.5
 
-            change_list = list(self.tags_to_change(debug_percent, soup, text_div))
+            div = feature_line.divs
+
+            change_list = list(self.tags_to_change(feature_line.debug_color, soup, div))
             indexing_css_update = {}
             for indexed_div_content in change_list[::-1]:
-                text_div.contents.pop(indexed_div_content.div_content_index)
+                div.contents.pop(indexed_div_content.div_content_index)
 
                 for indexed_word_tag in indexed_div_content.indexed_word_tags[::-1]:
-                    text_div.contents.insert(
+                    div.contents.insert(
                         indexed_div_content.div_content_index,
                         indexed_word_tag.tag)
                     indexing_css_update[indexed_word_tag.index] = indexed_word_tag.word
@@ -175,7 +172,6 @@ class TrueFormatUpmarker(object):
     IndexedDivContent = namedtuple("IndexedDivContent", ["div_content_index", "indexed_word_tags"])
 
     def tags_to_change(self, debug_percent, soup, text_div) -> IndexedDivContent :
-        x = 1
         for div_tag_index, content in enumerate(text_div.contents):
             if isinstance(content, bs4.NavigableString):
                 words = TrueFormatUpmarker.tokenize_differential_signs(content)
