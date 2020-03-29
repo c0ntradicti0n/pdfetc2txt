@@ -6,7 +6,7 @@ class Pdf:
     def __init__(self):
         pass
 
-    def verify(self, serious=False, test_document=False):
+    def verify(self, serious=False, test_document=False, columns=None):
         attributes = {attr: getattr(self,attr)
                       for attr in dir(self)
                       if not isinstance(getattr(self,attr), Callable)
@@ -20,6 +20,8 @@ class Pdf:
         if test_document:
             score = 0
             for page, cols in self.pages_to_column_to_text.items():
+                if columns == self.columns:
+                    score += 100
                 if len(cols) == self.columns:
                     score += 100
                 for col_number, col_text in cols.items():

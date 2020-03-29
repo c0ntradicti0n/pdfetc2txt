@@ -31,7 +31,7 @@ def threewise(iterable):
         yield iterable[i-1], iterable[i], iterable[i+1]
 
 
-def third_fractal(s_value, s_tuple):
+def nd_fractal(s_value, s_tuple, n=3):
     """   [10, 40, 70] ->
 
           10- >  [-10.  10.  30.]
@@ -39,8 +39,8 @@ def third_fractal(s_value, s_tuple):
           70 ->  [ 50. 70. 90.]
 
     """
-    s1, s2, s3 = s_tuple
-    new_range = s_value + 2/3 * (numpy.array(s_tuple) - s2 )
+    mid = numpy.mean(s_tuple)
+    new_range = s_value + 2/n * (numpy.array(s_tuple) - mid )
     return new_range
 
 import unittest
@@ -49,7 +49,7 @@ class ListToolsTest(unittest.TestCase):
     def test_third_fractal(self):
         s_tuple = (10,40,70)
         for s in s_tuple:
-            new_range = third_fractal(s, s_tuple)
+            new_range = nd_fractal(s, s_tuple)
             print (new_range)
             s1, s2, s3 = s_tuple
             ds = s3 - s1

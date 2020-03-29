@@ -2,6 +2,7 @@ import os
 import pathlib
 import bs4
 
+
 from collections import Counter, defaultdict, namedtuple
 import more_itertools
 import itertools
@@ -26,7 +27,8 @@ from TFU.pdf import Pdf
 from TFU.trial_tools import range_parameter
 from TFU.trueformatupmarker import TrueFormatUpmarker
 from helpers.color_logger import *
-from helpers.list_tools import threewise, third_fractal
+from helpers.list_tools import threewise, nd_fractal
+logging.getLogger().setLevel(logging.WARNING)
 
 
 class Page_Features:
@@ -100,10 +102,10 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         hdbscan_kwargs = {
             'algorithm': 'boruvka_balltree',
             'metric': 'hamming',
-            'cluster_selection_epsilon': 0.5,
+            'cluster_selection_epsilon': TrueFormatUpmarkerPdf2HTMLEX.hdbscan_kwargs["cluster_selection_epsilon"],
             'cluster_selection_method': 'leaf',
-            'alpha': 0.95,
-            'min_cluster_size': int((len(features.divs) * 0.7 / self.number_columns)),
+            'alpha': TrueFormatUpmarkerPdf2HTMLEX.hdbscan_kwargs["alpha"],
+            'min_cluster_size': int((len(features.divs) * TrueFormatUpmarkerPdf2HTMLEX.hdbscan_kwargs["min_cluster_size"] / self.number_columns)),
             'min_samples': int((len(features.divs) * TrueFormatUpmarkerPdf2HTMLEX.hdbscan_kwargs["min_samples"] / self.number_columns))
         }
 
@@ -147,6 +149,8 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         """
 
         # Clustering
+
+        logging.error(hdbscan_kwargs)
         clusterer = hdbscan.HDBSCAN(**hdbscan_kwargs)
         clusterer.fit(features[features_to_use])
         threshold = pandas.Series(clusterer.outlier_scores_).quantile(0.85)
@@ -224,7 +228,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         self.pdf_obj.pages_to_column_to_text = \
             features.groupby(by="cluster").apply(lambda x:
                 x.groupby(by="page_number").apply(lambda x:
-                      " ".join([div.text for div in x.divs]))).to_dict()
+                      " ".join([div.text for div in x.divs])).to_dict()).to_dict()
         return features
 
     FeatureStuff = namedtuple("FeatureStuff", ["divs", "coords", "data", "density_field", "labels"])
@@ -328,6 +332,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         fine_grained_pdfs = fine_grained_field [indices[:,0], indices[:,1]]
 
         number_of_columns = self.number_of_columns(density2D=fine_grained_field.T)
+        number_of_columns = self.number_of_columns(density2D=fine_grained_field.T)
 
         mask = self.header_footer_mask(
             fine_grained_field,
@@ -363,7 +368,10 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
             peaks, _ = find_peaks(density2D[height], distance=15, prominence=0.0001)
             peaks_at_height_steps.append(peaks)
         lens = [len(peaks) for peaks in peaks_at_height_steps]
-        return self.most_common_value(lens)
+        number_of_clumns = self.most_common_value(lens)
+        if number_of_clumns == 0:
+            number_of_clumns = 1
+        return number_of_clumns
 
     def header_footer_mask(self, field, pdfs, points, number_of_culumns, divs):
         mask = numpy.full_like(pdfs, False).astype(bool)
@@ -416,74 +424,132 @@ import unittest
 
 
 class Updater(object):
+    # the following looks stupid, but it's hard to crate an empty df with dtypes
+
     params = {}
-    def __init__(self, params : Dict[
-                                 str, Tuple[float, float, float]]):
+    def __init__(self,
+                 params : Dict[str, Tuple[float, float, float]],
+                 original_ml_kwargs : Dict,
+                 n=3):
+        self.original_ml_kwargs = original_ml_kwargs.copy()
+        self.init_choices()
+        self.n = n
         for param_name, range_tuple in params.items():
-            setattr(self, param_name, range_parameter(range_tuple))
-            self.params[param_name] = range_tuple
+            self.init_generator_and_params(param_name, range_tuple, n=self.n)
 
-    def next(self, str):
-        value = getattr(self, str)
-        return next(value)
+    def init_generator_and_params(self, param_name, range_tuple, n):
+        self.params[param_name] = list(range_parameter(range_tuple, n))
+        setattr(self, param_name, range_parameter(range_tuple, n))
 
-    def update(self, choices):
-        best = max(choices)
-        for param, tuple in self.params.items():
-            self.params[param] = third_fractal(choices[best][param], tuple)
+    def init_choices(self):
+        self.choices = pandas.DataFrame({'param': ["start"], 'value': [0.0], 'score': [0.0], 'state': [{}]})
+        self.choices = self.choices[[False]]
 
-    def trials(self):
-        for param in self.params:
-            yield (param, self.next(param))
+    choices_i = 0
+    def notate(self, option, score, ml_kwargs):
+        self.choices.loc[self.choices.shape[0]] = [*option, score, ml_kwargs]
+        self.choices_i += 1
+
+    def update(self):
+        good_option = self.choices['score'].idxmax()
+        choice = self.choices.iloc[good_option]
+        param = choice.param
+        s_tuple = self.params[param]
+
+        if self.choices[self.choices == param].score.equals(choice.score):
+            resolution = len(s_tuple) + 1
+            self.init_generator_and_params(param, self.params[choice.param], n=resolution)
+            self.params[choice.param] = list(nd_fractal(choice.value, s_tuple, n=resolution))
+        else:
+            self.params[choice.param] = list(nd_fractal(choice.value, s_tuple))
+
+        self.init_choices()
 
     def options(self):
-        for change in itertools.chain(self.trials()):
-            yield change
+        for param in self.params:
+            yield from self.get_following(param)
+
+    def get_following(self, param):
+        for value in self.params[param]:
+            new_option = self.original_ml_kwargs.copy()
+            new_option.update({param:value})
+            logging.warning(f"setting {param} to {value}")
+            yield param, value, new_option
+
+    def give_feedback(self):
+        pprint.pprint(self.choices)
+
+
 
 class TestPaperReader(unittest.TestCase):
     tfu_pdf = TrueFormatUpmarkerPdf2HTMLEX(debug=True, parameterize=False)
 
     def test_a_train(self):
-        updating = {"min_samples": (0.1, 0.5, 0.9)}
-        updater = Updater(updating)
+        hdbscan_kwargs = {
+            'algorithm': 'boruvka_balltree',
+            'metric': 'hamming',
+            'cluster_selection_epsilon': 0.5,
+            'cluster_selection_method': 'leaf',
+            'alpha': 0.95,
+            'min_cluster_size': 0.7,
+            'min_samples': 0.4
+        }
+
+        updating = {
+                    #"cluster_selection_epsilon": (0.1, 0.5, 0.9),
+                    "min_samples": (0.1, 0.5, 0.9),
+                    "min_cluster_size": (0.2, 0.5, 0.6),
+                    "alpha": (0.2, 0.5, 0.7)
+        }
+        pandas.options.display.width = 0
+
+
+        updater = Updater(updating, self.tfu_pdf.hdbscan_kwargs)
         files = list(pathlib.Path('test/data').glob('*.html'))
-        for path in files:
-
-            train = True
+        train = True
 
 
-            i = 0
+        i = 0
 
 
-            while train:
-                choices = {}
+        while train:
+            if i>1000:
+                logging.warning(f"reached {self.tfu_pdf.hdbscan_kwargs}")
+                break
+
+            for option in updater.options():
+                score = 0
                 i += 1
-                if i>10:
-                    logging.warning(f"reached {self.tfu_pdf.hdbscan_kwargs}")
-                    break
+                param, value, kwargs = option
+                self.tfu_pdf.hdbscan_kwargs.update(kwargs)
 
-                for option in updater.options():
+                for path in files:
+                    try:
+                        this_score = self.extract(path)
 
-                    logging.info(f"updating {dict([option])}")
-                    self.tfu_pdf.hdbscan_kwargs.update(dict([option]))
+                        score += this_score
+                        logging.info(f"PDF extraction score: {this_score}")
 
-                    path = str(path)
-                    kwargs = {}
-                    kwargs['html_read_from'] = path
-                    kwargs['html_write_to'] = path + ".computed.htm"
-                    columns = int(regex.search(r"\d", path).group(0))
+                    except ValueError as e:
+                        logging.error(f"training error {e} ignoring")
+                        continue
 
-                    pdf_obj = self.tfu_pdf.convert_and_index(**kwargs)
+                updater.notate(option=(param, value), score=score, ml_kwargs=self.tfu_pdf.hdbscan_kwargs)
 
-                    score = pdf_obj.verify(serious=True, test_document=True)
-                    logging.info(f"PDF extraction score: {score}")
+            updater.give_feedback()
+            updater.update()
 
-                    choices[score] = option
-
-            updater.update(choices)
+    def extract(self, path):
+        path = str(path)
+        kwargs = {}
+        kwargs['html_read_from'] = path
+        kwargs['html_write_to'] = path + ".computed.htm"
+        columns = int(regex.search(r"\d", path).group(0))
+        pdf_obj = self.tfu_pdf.convert_and_index(**kwargs)
+        score_pdf = pdf_obj.verify(columns=columns, serious=True, test_document=True)
+        return score_pdf
 
     def test_layout_files(self):
-        updater = Updater({"min_samples": (0., 110., 220.)})
         files = list(pathlib.Path('test/data').glob('*.html'))
         for path in files:
             path = str(path)
@@ -499,6 +565,7 @@ class TestPaperReader(unittest.TestCase):
 
             assert pdf_obj.columns == columns
             assert os.path.exists(kwargs['html_write_to'])
+
 
 
 
