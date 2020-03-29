@@ -1,0 +1,906 @@
+% article.tex, a sample LaTeX file.
+% Run LaTeX on this file twice for proper section numbers.
+% A '%' causes LaTeX to ignore remaining text on the line
+
+% Use the following line for draft mode (double spaced, single column)
+%\documentclass[preprint,pre,floats,aps,amsmath,amssymb]{revtex4}
+
+% Use the following line for journal mode (single spaced, double column)
+\documentclass[pre,floats,aps,amsmath,amssymb]{article}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{graphicx}
+\usepackage{bm}
+
+\usepackage[colaction]{multicol}
+\usepackage{etoolbox}
+
+\makeatletter
+\newcounter{nexprex@col@count}
+\newcounter{nexprex@current@column@call}
+\def\nexprex@patch@last
+  {%
+    \stepcounter{nexprex@col@count}%
+    \protected@write\@auxout{}
+      {%
+        \string\def\string\nexprex@cur@col{\arabic{nexprex@col@count}}%
+      }%
+  }
+\def\nexprex@patch@else
+  {%
+    \ifmc@firstcol
+      \setcounter{nexprex@col@count}{0}%
+    \fi
+    \nexprex@patch@last
+  }
+\def\nexprex@patch@error
+  {%
+    \GenericError{}
+      {Patching of \string\mc@col@status@write\space failed}
+      {%
+        Make sure `colaction` was set as an option for `multicol`.%
+        \MessageBreak
+        Else you're screwed, don't use the code provided here.\MessageBreak%
+      }
+      {No further help available.}%
+  }
+\pretocmd\mc@lastcol@status@write{\nexprex@patch@last}{}{\nexprex@patch@error}
+\pretocmd\mc@col@status@write{\nexprex@patch@else}{}{\nexprex@patch@error}
+\newcommand\currentcolumn
+  {%
+    \stepcounter{nexprex@current@column@call}%
+    \protected@write\@auxout{}
+      {%
+        \string\expandafter
+        \string\global
+        \string\expandafter
+        \string\let
+          \string\csname\space
+            nexprex@current@column@\arabic{nexprex@current@column@call}%
+          \string\endcsname
+          \string\nexprex@cur@col
+      }%
+    \ifcsname
+      nexprex@current@column@\arabic{nexprex@current@column@call}\endcsname
+      \csname
+        nexprex@current@column@\arabic{nexprex@current@column@call}\endcsname
+    \fi
+  }
+\makeatother
+
+
+\begin{document}
+
+
+
+\title{The Scientific Paper: A Template with Tips for Working with
+\LaTeX}
+\author{D.P. Jackson, K. Browne, and J.Q. Student}
+\textit{Department of Physics and Astronomy, Dickinson
+College, Carlisle, Pennsylvania  17013  USA}
+\date{\today}
+
+\begin{abstract}
+This paper should serve as an outline for writing scientific papers.
+It contains all of the important sections that should be included in
+scientific paper as well as descriptions of what should be included in
+each of these sections. It also contains some useful tips on how to
+use \LaTeX\ to write scientific papers.  The easiest way is to use
+this document as a template and insert your text and figures as
+described in the text below. This section is the abstract.  The
+abstract should contain a brief description of the project including
+relevant description of the problem, data collection procedures, and a
+summary of results as well as a brief description of how this
+information fits into the overall field.  The abstract may contain
+equations like $\textbf{E}=\textbf{E}_0\cos
+(\textbf{k}\cdot\textbf{r}-\omega t+\phi)$ and, as you will notice,
+inline equations look much better in \LaTeX\ than they do in MS Word.
+An abstract is usually quite short. Often, the length is limited to
+between 200 and 400 words.
+\end{abstract}
+
+\maketitle
+
+    \begin{multicols}{3}
+
+\section{Introduction}
+\label{sec:intro}
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column  \LaTeX,
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+\LaTeX.
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+\LaTeX\
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column  \LaTeX\
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+Style Manual at http://www.aip.org/pubservs/style/4thed/toc.html.
+
+
+\section{Theory}
+\label{sec:theory}
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column  \LaTeX\
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column  $\backslash$ref\{sec:intro\}
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+$\backslash$ref\{sec:theory\}'' to get ``this is discussed in
+Sections~\ref{sec:intro} and \ref{sec:theory}.''
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+\begin{equation}
+\textbf{E}=\textbf{E}_0\cos (\textbf{k}\cdot\textbf{r}-\omega t+\phi),
+\label{eq:E}
+\end{equation}
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+\begin{equation}
+\textbf{B}=\textbf{B}_0\cos (\textbf{k}\cdot\textbf{r}-\omega t+\phi).
+\label{eq:B}
+\end{equation}
+Of course, I can easily refer back to Eqs.~\ref{eq:E} and \ref{eq:B}
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\section{Experimental Methods}
+\label{sec:experiment}
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column  Fig.~\ref{fig:geometry} (note that I didn't have to worry
+about the figure number).
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column \LaTeX\
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column  \LaTeX
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\begin{figure}[ht]
+\includegraphics[width=2.8 in]{sample}
+\caption{A sample schematic diagram for an experiment.}
+\label{fig:geometry}
+\end{figure}
+
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\section{Results}
+\label{sec:results}
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column  Fig.~\ref{fig:force}.
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\LaTeX\.
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\begin{figure}[ht]
+\includegraphics[width=2.8 in]{sample}
+\caption{Force as a function of length for a particular experiment.
+The dashed curves represent the nonmagnetic case while the solid
+curves show the magnetic effects.}
+\label{fig:force}
+\end{figure}
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+\LaTeX,
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column Table~\ref{tab:temps}
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\begin{table}[ht]
+\caption{Conventional and syringe thermometer readings. The highest
+and lowest readings were used for calibration.}
+\begin{center}
+\begin{tabular}{@{\hspace{18pt}} c @{\hspace{18pt}} ||
+@{\hspace{12pt}} c @{\hspace{12pt}} | @{\hspace{12pt}} c
+@{\hspace{12pt}} }
+
+\hline\hline
+Conventional & \multicolumn{2}{c}{Syringe {\hspace{9pt}} } \\ \hline
+20$^\circ$C & 1.8cc & 20$^\circ$C \\
+27$^\circ$C & 2.4cc & 28$^\circ$C \\
+42$^\circ$C & 3.9cc & 46$^\circ$C \\
+55$^\circ$C & 5.0cc & 59$^\circ$C \\
+67$^\circ$C & 6.0cc & 72$^\circ$C \\
+84$^\circ$C & 7.0cc & 84$^\circ$C \\
+\hline\hline
+\end{tabular}
+\end{center}
+\label{tab:temps}
+\end{table}
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+Section 2. Table~\ref{tab:pressure}
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\begin{table}[ht]
+\caption{Force, area, and pressure data for the experiment shown in
+Fig.~\ref{fig:geometry} and described by Eq.~\ref{eq:B}.  Agreement is
+typically within five percent.}
+\begin{center}
+\begin{tabular}{l @{\hspace{30pt}} c @{\hspace{18pt}} c}
+\hline\hline
+& Piston 1 & Piston 2 \\ \hline
+Avg. Force (N) & 4.40 & 2.25 \\
+Area (cm$^2$) & 6.16 & 2.25 \\
+$F/A$ (N/cm$^2$) & 0.714 & 0.717 \\
+\hline\hline
+\end{tabular}
+\end{center}
+\label{tab:pressure}
+\end{table}
+
+\section{Analysis}
+\label{sec:analysis}
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\section{Suggestions for Further Research}
+\label{sec:further_research}
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\subsubsection*{Including References}
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\LaTeX,
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\textit{thebibliography}.
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+$\backslash$cite\{\}
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+citation~\cite{Jackson}
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+~\cite{Comment}.
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+\LaTeX.
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\appendix*
+
+\section{More \LaTeX\ Information}
+\label{sec:latex}
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\LaTeX.
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\LaTeX
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\subsection{Getting Started}
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\subsection{Fonts}
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+\textbf{bold} fonts occasionally.  In \LaTeX,
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\verb!\textit{}! and \verb!\textbf{}!
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\subsection{Math Mode}
+
+In \LaTeX,
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\verb!$! and then you leave
+math mode by typing another \verb!$!.
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+\verb!$F=ma$!
+results in $F=ma$.
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\verb!$\alpha-\beta+\gamma$!  results in $\alpha-\beta+\gamma$.
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\verb!^{}! and
+\verb!_{}! in math mode respectively.  For example, typing
+\verb!$A_{1}=e^{-x^{2}}$! results in $A_{1}=e^{-x^{2}}$.
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\LaTeX is
+something that you begin and end such as the \textit{abstract}
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\verb!\begin{equation}!, then your equation (and a label), then
+\verb!\end{equation}!.  Here is an example:
+\begin{equation}
+F_m = -\frac{d{\cal E}_m^{(1)} }{db}.
+\label{eq:deriv}
+\end{equation}
+You will have noticed that to make the derivative in
+Eq.~\ref{eq:deriv}, I had to make a fraction.  The fraction command is
+\verb!\frac{}{}! (in math mode);
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+ in the
+equation environment so that I can refer to it simply by typing
+\verb!Eq. \ref{eq:deriv}! to get Eq.~\ref{eq:deriv}.
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+$\textbf{F}=m\textbf{a}$.  This was accomplished by typing
+\verb!$\textbf{F}=m\textbf{a}$!.
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+$\textbf{F}$ and $\textbf{a}$ written as $F$ and $a$.  This works fine
+except when there is no non-math-mode character to make bold.  An
+example of a math-mode character that does not have a non-math-mode
+equivalent is $\nabla$, obtained by typing \verb!\nabla!.  If you want
+this as a vector operator and you want it to be bold, you must use the
+command \verb!\bm! (boldmath) to get $\bm{\nabla}$.  This allows you
+to write that in general,
+\begin{equation}
+\bm{\nabla}\times\textbf{A}\ne\bm{\nabla}\cdot\textbf{A}.
+\end{equation}
+Note the use of \verb!\times! for $\times$, \verb!\cdot! for $\cdot$
+and \verb!\ne! for $\ne$.
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\verb!\hat{}! command.  For
+example, \verb!\$hat{\textbf{r}}$! results in $\hat{\textbf{r}}$ and
+\verb!$\hat{\textbf{e}}_{\theta}! results in
+$\hat{\textbf{e}}_{\theta}$.
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\verb!\begin{eqnarray}!$\cdots$\verb!\end{eqnarray}!.  In
+an \textit{equationarray}, each line needs to be separated by
+\verb!\\! and items surrounded by ampersands (\verb!&!)
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\verb!\nonumber! (which is typically what
+you'll want to do).  The following shows an example of a multiline
+equation:
+\begin{eqnarray}
+F_{j} &=& \int d {\cal A}\, \Biggl\{ \frac{3\eta \dot{b}}{b^3}
+(R^2 - r^2) + [\Psi_j(R) - \Psi_j(r)] \nonumber \\
+&\ &\qquad\qquad + \frac{1}{2}\mu_0 \Bigl[ M_{jr}^2(R) -
+M_{jz}^2(r) \Bigr] \Biggr\}.
+\label{eq:forcej}
+\end{eqnarray}
+Notice that I have added some space in Eq.~\ref{eq:forcej}
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+\verb!\,! small space, \verb!\:! medium space,
+\verb!\;! large space, and \verb&\!&
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+\verb!\sqrt{2}x! which gives $\sqrt{2}x$ with \verb!\sqrt{2}\,x! which
+gives $\sqrt{2}\,x$, or \verb!\int\int dx dy! which gives $\int\int dx
+dy$ with \verb&\int\!\!\int \!dx\,dy& which gives $\int\!\!\int
+\!dx\,dy$.
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+\verb!\quad! and \verb!\qquad! add even
+larger and larger amounts of space.
+
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+\LaTeX
+
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+  \currentcolumn{} text in column  \currentcolumn{} text in column  \currentcolumn{} text in column
+
+
+
+\begin{thebibliography}{99}
+
+
+\bibitem{FHD}R. E. Rosensweig, {\it Ferrohydrodynamics} (Cambridge
+University Press, Cambridge, 1985), and references therein.
+
+\bibitem{Jackson}D. P. Jackson, R. E. Goldstein and A. O. Cebers,
+Phys. Rev. E {\bf 50}, 298 (1994).
+
+\bibitem{Comment} Here is an example of a comment that you might need
+to include.  This is usually a comment about something very subtle
+that might be important to include but generally gets in the way of
+the regular text.
+
+\end{thebibliography}
+\end{multicols}
+
+\end{document}             % End of document.

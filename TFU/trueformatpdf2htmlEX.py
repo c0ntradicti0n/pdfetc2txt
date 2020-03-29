@@ -102,7 +102,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         hdbscan_kwargs = {
             'algorithm': 'boruvka_balltree',
             'metric': 'hamming',
-            'cluster_selection_epsilon': TrueFormatUpmarkerPdf2HTMLEX.hdbscan_kwargs["cluster_selection_epsilon"],
+            'cluster_selection_epsilon': float(TrueFormatUpmarkerPdf2HTMLEX.hdbscan_kwargs["cluster_selection_epsilon"]),
             'cluster_selection_method': 'leaf',
             'alpha': TrueFormatUpmarkerPdf2HTMLEX.hdbscan_kwargs["alpha"],
             'min_cluster_size': int((len(features.divs) * TrueFormatUpmarkerPdf2HTMLEX.hdbscan_kwargs["min_cluster_size"] / self.number_columns)),
@@ -128,10 +128,9 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
                   encoding='utf8') as file:
             file.write(str(soup).replace("<coolwanglu@gmail.com>", "coolwanglu@gmail.com"))
 
+        self.pdf_obj.features = features
         self.pdf_obj.text = " ".join(self.indexed_words.values())
         self.pdf_obj.indexed_words = self.indexed_words
-
-
 
     def get_page_tags(self, soup):
         return soup.select("div[data-page-no]")
@@ -154,7 +153,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         clusterer = hdbscan.HDBSCAN(**hdbscan_kwargs)
         clusterer.fit(features[features_to_use])
         threshold = pandas.Series(clusterer.outlier_scores_).quantile(0.85)
-        outliers = numpy.where(clusterer.outlier_scores_ > threshold)[0]
+        #outliers = numpy.where(clusterer.outlier_scores_ > threshold)[0]
 
         # Determine number of clusters
 
@@ -179,9 +178,6 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         logging.debug(f"how many content items in columns {cluster_counts}")
         logging.debug(f"using outliers also for column? {str(self.take_outliers).lower()}")
 
-        if len(relevant_clusters)==len(cluster_counts):
-            logging.warning("too many outliers, take all")
-            self.take_outliers = True
 
         """if debug:
             logging.info(f"sorting and detecting textboxes with \n{pprint.pformat(hdbscan_kwargs)}")
@@ -202,17 +198,18 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
             # TODO right to left and up to down!
 
             # Assuming, also column labels have been sorted yet from left to right
+
             groups_of_clusters = page_group.groupby(by="cluster")
 
+            groups_of_clusters = sorted(groups_of_clusters, key=lambda cluster_and_cluster_group: cluster_and_cluster_group[1].x.mean() )
+
             page_cluster_up_bottom_groups = \
-                [(cluster, cluster_group.sort_values(by="y"))
-                 for cluster, cluster_group in groups_of_clusters
+                [(new_cluster, cluster_group.sort_values(by="y"))
+                 for new_cluster, (cluster, cluster_group) in enumerate(groups_of_clusters)
                  ]
 
             page_cluster_lr_groups[page] = \
-                sorted(page_cluster_up_bottom_groups, key=lambda c: c[1].x.min())
-
-        reading_i = itertools.count()  # counter for next indices for new html-tags
+                sorted(page_cluster_up_bottom_groups, key=lambda c: c[1].x.mean())
 
         features["reading_sequence"] = list(more_itertools.flatten([cluster_content["index"].tolist()
                                 for page_number, page_content in page_cluster_lr_groups.items()
@@ -225,10 +222,11 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
             features["relevant"] = True
 
 
-        self.pdf_obj.pages_to_column_to_text = \
-            features.groupby(by="cluster").apply(lambda x:
-                x.groupby(by="page_number").apply(lambda x:
-                      " ".join([div.text for div in x.divs])).to_dict()).to_dict()
+        self.pdf_obj.pages_to_column_to_text = {page_number:{cluster:" ".join([div.text for div in cluster_content["divs"].tolist()])
+                                for cluster, cluster_content in page_content}
+                      for page_number, page_content in page_cluster_lr_groups.items()
+
+                      }
         return features
 
     FeatureStuff = namedtuple("FeatureStuff", ["divs", "coords", "data", "density_field", "labels"])
@@ -332,7 +330,6 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         fine_grained_pdfs = fine_grained_field [indices[:,0], indices[:,1]]
 
         number_of_columns = self.number_of_columns(density2D=fine_grained_field.T)
-        number_of_columns = self.number_of_columns(density2D=fine_grained_field.T)
 
         mask = self.header_footer_mask(
             fine_grained_field,
@@ -367,7 +364,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
                 int(config.page_array_model * 0.05)):
             peaks, _ = find_peaks(density2D[height], distance=15, prominence=0.0001)
             peaks_at_height_steps.append(peaks)
-        lens = [len(peaks) for peaks in peaks_at_height_steps]
+        lens = [len(peaks) for peaks in peaks_at_height_steps if len(peaks) != 0]
         number_of_clumns = self.most_common_value(lens)
         if number_of_clumns == 0:
             number_of_clumns = 1
@@ -398,18 +395,14 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
 
             # If there are text boxes on the same height, the distance will be very small due to rounding,
             # replace them with the value for the textbox in the same line
-            threshold = 0.00001
+            threshold = 0.005
             d0y1 = 0
             d0y2 = 0
-            for i, (dy1, dy2) in enumerate(dY):
-                if dy1 < threshold:
-                    dY[i] = (d0y1, dy2)
-                else:
-                    d0y1 = dy1
-                if dy1 < threshold:
-                    dY[i] = (dy1, d0y2)
-                else:
-                    d0y2 = dy2
+            to_sanitize = list(enumerate(dY))
+            sanitizing_half = int(len(to_sanitize)/2)
+            self.sanitize_line_distances(d0y1, d0y2, dY, threshold, to_sanitize[:sanitizing_half][::-1])
+            self.sanitize_line_distances(d0y1, d0y2, dY, threshold, to_sanitize[sanitizing_half::1])
+
 
             norm_distance = numpy.median(list(more_itertools.flatten(dY)))
             distance_std = norm_distance * 0.1
@@ -419,6 +412,18 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
             good = indices[dI[valid_points_at]]
             mask[good] = True
         return mask
+
+    def sanitize_line_distances(self, d0y1, d0y2, dY, threshold, to_sanitize):
+        for i, (dy1, dy2) in to_sanitize:
+            if dy1 < threshold:
+                dY[i] = (d0y1, dy2)
+            else:
+                d0y1 = dy1
+            if dy1 < threshold:
+                dY[i] = (dy1, d0y2)
+            else:
+                d0y2 = dy2
+
 
 import unittest
 
@@ -430,10 +435,16 @@ class Updater(object):
     def __init__(self,
                  params : Dict[str, Tuple[float, float, float]],
                  original_ml_kwargs : Dict,
-                 n=3):
+                 patience = 3,
+                 n=3,
+                 accuracy = 0.01):
         self.original_ml_kwargs = original_ml_kwargs.copy()
         self.init_choices()
         self.n = n
+        self.patience = patience
+        self.accuracy = accuracy
+
+        self.sized = Counter()
         for param_name, range_tuple in params.items():
             self.init_generator_and_params(param_name, range_tuple, n=self.n)
 
@@ -451,18 +462,38 @@ class Updater(object):
         self.choices_i += 1
 
     def update(self):
+        if len(self.choices) == 0:
+            return self.best_solution
+        self.choices.reset_index(drop=True, inplace=True)
+
         good_option = self.choices['score'].idxmax()
         choice = self.choices.iloc[good_option]
+
         param = choice.param
         s_tuple = self.params[param]
+        other_solutions_of_this_trial = self.choices.loc[self.choices.param.str.contains(param)]
+        as_good_solutions = other_solutions_of_this_trial.loc[other_solutions_of_this_trial.score == choice.score]
 
-        if self.choices[self.choices == param].score.equals(choice.score):
+        if len(as_good_solutions) > 1:
+            if self.sized[param] > self.patience or  as_good_solutions.value.std() < self.accuracy:
+                logging.info("No patience anymore, good enough")
+                self.choices = self.choices.loc[self.choices.param != param]
+                return self.update()
+
             resolution = len(s_tuple) + 1
-            self.init_generator_and_params(param, self.params[choice.param], n=resolution)
-            self.params[choice.param] = list(nd_fractal(choice.value, s_tuple, n=resolution))
-        else:
-            self.params[choice.param] = list(nd_fractal(choice.value, s_tuple))
+            self.init_generator_and_params(param, self.params[param], n=resolution)
+            s_tuple = self.params[param]
+            self.params[param] = list(nd_fractal(choice.value, s_tuple, n=resolution, lense=2))
+            self.sized[param] += 1
 
+        else:
+            self.best_solution = choice
+            resolution = 3
+            s_value = as_good_solutions.value.mean()
+            self.init_generator_and_params(param, self.params[param], n=resolution)
+            s_tuple = self.params[param]
+            self.params[param] = list(nd_fractal(s_value, s_tuple, n=resolution, lense=1))
+            self.sized[param] -= 1
         self.init_choices()
 
     def options(self):
@@ -478,6 +509,7 @@ class Updater(object):
 
     def give_feedback(self):
         pprint.pprint(self.choices)
+        pprint.pprint(self.sized)
 
 
 
@@ -491,15 +523,15 @@ class TestPaperReader(unittest.TestCase):
             'cluster_selection_epsilon': 0.5,
             'cluster_selection_method': 'leaf',
             'alpha': 0.95,
-            'min_cluster_size': 0.7,
-            'min_samples': 0.4
+            'min_cluster_size': 0.2,
+            'min_samples': 0.2
         }
 
         updating = {
-                    #"cluster_selection_epsilon": (0.1, 0.5, 0.9),
+                    #"cluster_selection_epsilon": (0.5, 0.5, 1.5),
                     "min_samples": (0.1, 0.5, 0.9),
-                    "min_cluster_size": (0.2, 0.5, 0.6),
-                    "alpha": (0.2, 0.5, 0.7)
+                    "min_cluster_size": (0.1, 0.5, 0.9),
+                    "alpha": (0.2, 0.5, 1.)
         }
         pandas.options.display.width = 0
 
@@ -507,16 +539,10 @@ class TestPaperReader(unittest.TestCase):
         updater = Updater(updating, self.tfu_pdf.hdbscan_kwargs)
         files = list(pathlib.Path('test/data').glob('*.html'))
         train = True
-
-
         i = 0
 
 
         while train:
-            if i>1000:
-                logging.warning(f"reached {self.tfu_pdf.hdbscan_kwargs}")
-                break
-
             for option in updater.options():
                 score = 0
                 i += 1
@@ -549,7 +575,7 @@ class TestPaperReader(unittest.TestCase):
         score_pdf = pdf_obj.verify(columns=columns, serious=True, test_document=True)
         return score_pdf
 
-    def test_layout_files(self):
+    def xtest_layout_files(self):
         files = list(pathlib.Path('test/data').glob('*.html'))
         for path in files:
             path = str(path)

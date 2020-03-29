@@ -11,29 +11,28 @@ class Pdf:
                       for attr in dir(self)
                       if not isinstance(getattr(self,attr), Callable)
                       and not attr.startswith("__")}
-        for attr, value in attributes.items():
-            if not value:
-                logging.error(f"{attr} is not set")
-                if serious:
-                    assert value
 
         if test_document:
             score = 0
             for page, cols in self.pages_to_column_to_text.items():
                 if columns == self.columns:
-                    score += 100
+                    score += 10
                 if len(cols) == self.columns:
-                    score += 100
-                for col_number, col_text in cols.items():
+                    score += 10
+                for i, (col_number, col_text) in enumerate(cols.items()):
                     if "text" in col_text and "column" in col_text:
                         score += 1
-                    if str(col_number) in col_text:
-                        score += 1
-                    if not str(col_number + 1) in col_text:
-                        score += 1
-                    if not str(col_number - 1) in col_text:
-                        score += 1
+                    if str(i + 1) in col_text:
+                        score += 3 * col_text.count(str(i + 1))
+                        score -= 3 * sum([1, *[col_text.count(str(j + 1)) for j in range(len(cols)) if j != i+1]])
+
             return score
+
+        for attr, value in attributes.items():
+            if not value:
+                logging.error(f"{attr} is not set")
+                if serious:
+                    assert value
 
 
 

@@ -31,7 +31,7 @@ def threewise(iterable):
         yield iterable[i-1], iterable[i], iterable[i+1]
 
 
-def nd_fractal(s_value, s_tuple, n=3):
+def nd_fractal(s_value, s_tuple, n=3, lense = 1):
     """   [10, 40, 70] ->
 
           10- >  [-10.  10.  30.]
@@ -40,7 +40,7 @@ def nd_fractal(s_value, s_tuple, n=3):
 
     """
     mid = numpy.mean(s_tuple)
-    new_range = s_value + 2/n * (numpy.array(s_tuple) - mid )
+    new_range = s_value + lense * 2/n * (numpy.array(s_tuple) - mid )
     return new_range
 
 import unittest
