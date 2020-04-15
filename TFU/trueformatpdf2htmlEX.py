@@ -24,16 +24,9 @@ from helpers.color_logger import *
 from helpers.list_tools import threewise
 logging.getLogger().setLevel(logging.WARNING)
 
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-chrome_options = Options()
-chrome_options.add_argument("--headless")
-chrome_options.add_argument("--window-size=1920x1080")
-chrome_options.binary_location = '/usr/bin/google-chrome'
 
 
 class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
-    browser = webdriver.Chrome(executable_path=os.path.abspath("venv/bin/chromedriver"),   chrome_options=chrome_options)
 
     def generate_css_tagging_document(self, html_read_from="", html_write_to="", parameterizing=False):
         """
@@ -48,7 +41,6 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
             soup = bs4.BeautifulSoup(f.read(), features='lxml')
 
 
-        web_view = self.browser.get("file:///home/stefan/cow/pdf2etc/"+ html_read_from)
 
         # create data and features for clustering
         css_dict = self.get_css(soup)
