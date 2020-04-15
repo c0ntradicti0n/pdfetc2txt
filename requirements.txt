@@ -10,7 +10,8 @@ lxml
 suffix-trees
 more_itertools
 dariah
-pandas
+pandas>=1.0.3
 gensim
 multi_rake
 tinycss
+git+git://github.com/c0ntradicti0n/LayoutEagle.git@master#egg=layouteagle

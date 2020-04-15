@@ -15,7 +15,6 @@ from TFU.trueformathtml import TrueFormatUpmarkerHTML
 from TFU.trueformatpdf2htmlEX import TrueFormatUpmarkerPdf2HTMLEX
 from helpers.str_tools import remove_ugly_chars
 
-
 class PaperReader:
     """ multimedial extractor. it reads text from papers in pdfs, urls, html and other things.
 
@@ -176,18 +175,3 @@ class PaperReader:
             json_path,
             txt_path)
 
-
-import unittest
-
-
-class TestPaperReader(unittest.TestCase):
-    paper_reader = PaperReader()
-
-    def test_paths(self):
-        paths = self.paper_reader.pdfpath2htmlpaths(
-            "Joseph_Amankwah_Amoah___Integrated_vs__add_on:_A'$'\n''multidimensional_conceptualisation_of'$'\n''technology_obsolescence_pdf.html")
-        assert 'Joseph_Amankwah_Amoah___Integrated_vs__add_on__A__multidimensional_conceptualisation_of__technology_obsolescence_pdf' in paths.apache_path
-
-
-if __name__ == '__main__':
-    unittest.main()

@@ -19,11 +19,14 @@ app = Flask(__name__)
 import logging
 logging.getLogger().setLevel(logging.INFO)
 
+
 os.system(". ~/.bashrc")
 
+import layouteagle
 
 reader = PaperReader(_length_limit=40000)
-
+layout_reader = layouteagle.LayoutEagle()
+layout_reader.make_model(n=18)
 
 
 def work_out_file(path):
@@ -85,6 +88,12 @@ def latest_difference_between(n=10):
     except urllib.error.URLError:
         logging.error("Connection was refused, no internet")
 
+from layouteagle.LayoutEagle import LayoutEagle
+layouteagle = LayoutEagle(config.layouteagle_modeldir)
+
+if not os.path.isdir(config.layouteagle_modeldir):
+    layouteagle.make_model(n=150)
+
 
 import topic_modelling
 t_diff = topic_modelling.Topicist(directory=config.appcorpuscook_diff_txt_dir)
@@ -93,6 +102,9 @@ t_docs = topic_modelling.Topicist(directory=config.appcorpuscook_docs_txt_dir)
 
 def code_detect_replace(text):
     return text
+
+
+
 
 
 @qprofile

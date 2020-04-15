@@ -2,86 +2,38 @@ import os
 import pathlib
 import bs4
 
-
 from collections import Counter, defaultdict, namedtuple
 import more_itertools
 import itertools
-from typing import List, Dict, Tuple
+from typing import List, Dict
 
 import numpy
 import pandas
-import scipy
-import hdbscan
 
 from scipy.ndimage import gaussian_filter
 from scipy.signal import find_peaks
 
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pprint
 import regex
 
 import config
-from Exceptions.ConversionException import EmptyPageConversionError
-from TFU.pdf import Pdf
-from TFU.trial_tools import range_parameter
+from AutoUpdate.autoupdate import Updater
 from TFU.trueformatupmarker import TrueFormatUpmarker
 from helpers.color_logger import *
-from helpers.list_tools import threewise, nd_fractal
+from helpers.list_tools import threewise
 logging.getLogger().setLevel(logging.WARNING)
 
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+chrome_options = Options()
+chrome_options.add_argument("--headless")
+chrome_options.add_argument("--window-size=1920x1080")
+chrome_options.binary_location = '/usr/bin/google-chrome'
 
-class Page_Features:
-    page_number = 6
-    text_len = 7
-    text_distribution = 8
-    dist_ = 5
-    height = 2
-    font_size = 0
-    line_height = 1
-    left = 3
-    bottom = 4
-    density = 9
-    label_ = 10
-    index_ = 11
-
-algorithms = ['best', 'generic', 'prims_kdtree', 'prims_balltree', 'boruvka_kdtree', 'boruvka_balltree']
-metrics = {'braycurtis': hdbscan.dist_metrics.BrayCurtisDistance,
-           'canberra': hdbscan.dist_metrics.CanberraDistance,
-           'chebyshev': hdbscan.dist_metrics.ChebyshevDistance,
-           'cityblock': hdbscan.dist_metrics.ManhattanDistance,
-           'dice': hdbscan.dist_metrics.DiceDistance,
-           'euclidean': hdbscan.dist_metrics.EuclideanDistance,
-           'hamming': hdbscan.dist_metrics.HammingDistance,
-           'haversine': hdbscan.dist_metrics.HaversineDistance,
-           'infinity': hdbscan.dist_metrics.ChebyshevDistance,
-           'jaccard': hdbscan.dist_metrics.JaccardDistance,
-           'kulsinski': hdbscan.dist_metrics.KulsinskiDistance,
-           'l1': hdbscan.dist_metrics.ManhattanDistance,
-           'l2': hdbscan.dist_metrics.EuclideanDistance,
-           'mahalanobis': hdbscan.dist_metrics.MahalanobisDistance,
-           'manhattan': hdbscan.dist_metrics.ManhattanDistance,
-           'matching': hdbscan.dist_metrics.MatchingDistance,
-           'minkowski': hdbscan.dist_metrics.MinkowskiDistance,
-           'p': hdbscan.dist_metrics.MinkowskiDistance,
-           'pyfunc': hdbscan.dist_metrics.PyFuncDistance,
-           'rogerstanimoto': hdbscan.dist_metrics.RogersTanimotoDistance,
-           'russellrao': hdbscan.dist_metrics.RussellRaoDistance,
-           'seuclidean': hdbscan.dist_metrics.SEuclideanDistance,
-           'sokalmichener': hdbscan.dist_metrics.SokalMichenerDistance,
-           'sokalsneath': hdbscan.dist_metrics.SokalSneathDistance,
-           'wminkowski': hdbscan.dist_metrics.WMinkowskiDistance}
 
 class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
-    hdbscan_kwargs = {
-        'algorithm': 'boruvka_balltree',
-        'metric': 'hamming',
-        'cluster_selection_epsilon': 0.5,
-        'cluster_selection_method': 'leaf',
-        'alpha': 0.95,
-        'min_cluster_size': 0.7,
-        'min_samples': 0.4
-    }
+    browser = webdriver.Chrome(executable_path=os.path.abspath("venv/bin/chromedriver"),   chrome_options=chrome_options)
 
     def generate_css_tagging_document(self, html_read_from="", html_write_to="", parameterizing=False):
         """
@@ -95,19 +47,13 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         with open(html_read_from, 'r', encoding='utf8') as f:
             soup = bs4.BeautifulSoup(f.read(), features='lxml')
 
+
+        web_view = self.browser.get("file:///home/stefan/cow/pdf2etc/"+ html_read_from)
+
         # create data and features for clustering
         css_dict = self.get_css(soup)
-        features = self.extract_features(soup=soup, css_dict=css_dict)
+        features = self.extract_features(soup=soup, css_dict=css_dict, web_view=web_view)
 
-        hdbscan_kwargs = {
-            'algorithm': 'boruvka_balltree',
-            'metric': 'hamming',
-            'cluster_selection_epsilon': float(TrueFormatUpmarkerPdf2HTMLEX.hdbscan_kwargs["cluster_selection_epsilon"]),
-            'cluster_selection_method': 'leaf',
-            'alpha': TrueFormatUpmarkerPdf2HTMLEX.hdbscan_kwargs["alpha"],
-            'min_cluster_size': int((len(features.divs) * TrueFormatUpmarkerPdf2HTMLEX.hdbscan_kwargs["min_cluster_size"] / self.number_columns)),
-            'min_samples': int((len(features.divs) * TrueFormatUpmarkerPdf2HTMLEX.hdbscan_kwargs["min_samples"] / self.number_columns))
-        }
 
         self.pdf_obj.columns = self.number_columns
 
@@ -147,50 +93,6 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         the layout as footnotes, text columns, headers etc.
         """
 
-        # Clustering
-
-        logging.error(hdbscan_kwargs)
-        clusterer = hdbscan.HDBSCAN(**hdbscan_kwargs)
-        clusterer.fit(features[features_to_use])
-        threshold = pandas.Series(clusterer.outlier_scores_).quantile(0.85)
-        #outliers = numpy.where(clusterer.outlier_scores_ > threshold)[0]
-
-        # Determine number of clusters
-
-        logging.debug(f"detected {self.number_columns} columns")
-        what_clusters = set(clusterer.labels_)
-
-        if self.number_columns == len(what_clusters):
-            self.take_outliers = True
-        elif self.number_columns  < len(what_clusters) * 0.33:
-            logging.error("found unrealistic number of clusters, so I just take all")
-            self.take_outliers = True
-            clusterer.labels_ = [0]* len(clusterer.labels_)
-        else:
-            self.take_outliers = False
-
-        cluster_counts = Counter([l for l in clusterer.labels_ if self.take_outliers or l > -1])
-        relevant_clusters = sorted(cluster_counts, key=cluster_counts.get)[-self.number_columns:]
-
-        logging.debug(f"which clusters are there? {what_clusters}")
-        logging.debug(f"number of relevant columns {self.number_columns}")
-        logging.debug(f"these are {relevant_clusters}")
-        logging.debug(f"how many content items in columns {cluster_counts}")
-        logging.debug(f"using outliers also for column? {str(self.take_outliers).lower()}")
-
-
-        """if debug:
-            logging.info(f"sorting and detecting textboxes with \n{pprint.pformat(hdbscan_kwargs)}")
-            self.debug_pic(clusterer, numpy.column_stack((features.x, features.y)), debug_path, outliers)
-
-            if len(what_clusters) < self.number_columns:
-                logging.error("Too few columns found")
-                logging.warning("#### Take all debugging ####")
-                self.take_outliers = True
-                clusterer.labels_ = [0] * len(clusterer.labels_)"""
-
-        features["cluster"] = clusterer.labels_
-
         # sorting groups of clusters within pages
         page_cluster_lr_groups = defaultdict(list)
         for page, page_group in features.groupby(by="page_number"):
@@ -199,7 +101,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
 
             # Assuming, also column labels have been sorted yet from left to right
 
-            groups_of_clusters = page_group.groupby(by="cluster")
+            groups_of_clusters = page_group.groupby(by="column_labels")
 
             groups_of_clusters = sorted(groups_of_clusters, key=lambda cluster_and_cluster_group: cluster_and_cluster_group[1].x.mean() )
 
@@ -216,10 +118,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
                                 for cluster, cluster_content in page_content
                                 ]))
 
-        if not self.take_outliers:
-            features["relevant"] = features.cluster.isin(relevant_clusters)
-        else:
-            features["relevant"] = True
+        features["relevant"] = True
 
 
         self.pdf_obj.pages_to_column_to_text = {page_number:{cluster:" ".join([div.text for div in cluster_content["divs"].tolist()])
@@ -230,9 +129,18 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         return features
 
     FeatureStuff = namedtuple("FeatureStuff", ["divs", "coords", "data", "density_field", "labels"])
-    def extract_features(self, soup, css_dict) -> FeatureStuff:
+    def extract_features(self, soup, css_dict, web_view) -> FeatureStuff:
         features = pandas.DataFrame()
 
+        real_properties = get_attributes_script = f"""
+           divs = document.querySelectorAll("{self.div_selector}");
+           properties = [...divs].map(function(arg) {{
+                   rect = arg.getBoundingClientRect();
+                   return rect}});
+          return properties;"""
+        print (get_attributes_script)
+        edges_of_all_divs = self.browser.execute_async_script(get_attributes_script)
+        print(edges_of_all_divs)
         # Collect divs (that they have an x... attribute, that is generated by pdf2htmlEX)
         page_tags = list(self.get_page_tags(soup))
         page_to_divs = self.collect_pages_dict(page_tags)
@@ -246,8 +154,9 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         self.point_density_frequence_per_page(features, debug=True)
         return features[features.relevance_mask]
 
+    div_selector = 'div[class*=x]'
     def collect_pages_dict(self, pages):
-        page_to_divs = [(page_number, page.select('div[class*=x]')) for page_number, page in enumerate(pages)]
+        page_to_divs = [(page_number, page.select(self.div_selector)) for page_number, page in enumerate(pages)]
         return page_to_divs
 
     def get_pdf2htmlEX_header(tag):
@@ -284,12 +193,22 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
 
     def set_css_attributes(self, features, css_dict):
         features["tag_attributes"]  = features.divs.apply(self.get_tag_attribute_names)
+
         for index, attribute in enumerate(self.assinging_features):
-            features[attribute] = features.tag_attributes.apply(lambda x: self.get_declaration_value(css_dict[x[index]], attribute))
+            features[attribute] = features.tag_attributes.apply(
+                lambda row: self.css_dict_lookup(row, index, css_dict, attribute))
+
         features.rename(columns={"bottom":"y", "left":"x"}, inplace=True)
 
+    def css_dict_lookup(self, row, index, css_dict, attribute):
+        try:
+            return self.get_declaration_value(css_dict[row[index]], attribute)
+        except IndexError:
+            logging.warning(f"{index} is more than rows  attribute list is long {row}")
+            return 0
+
     def point_density_frequence_per_page (self, features, **kwargs):
-        # map computation to page
+        # map computation to pageclusters
         page_groups = features.groupby(by="page_number").apply(
             lambda page_group: self.analyse_point_density_frequence(
                         page_group,
@@ -302,6 +221,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         features["coarse_grained_pdf"] = numpy.hstack(other_feature_kinds_stacked.coarse_grained_pdfs)
         coarse_grained_field = sum(f for i, f in enumerate(other_feature_kinds_stacked.coarse_grained_field))
         features["relevance_mask"] = numpy.hstack(other_feature_kinds_stacked.mask)
+        features["column_labels"] =  numpy.hstack(other_feature_kinds_stacked.column_labels)
 
         return coarse_grained_field
 
@@ -311,7 +231,7 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
     def normalized(self, a):
         return a/[a_line.max()-a_line.min() for a_line in a.T]
 
-    FeatureKinds = namedtuple("FeatureKinds", ["coarse_grained_pdfs", "coarse_grained_field", "mask", "number_of_columns"])
+    FeatureKinds = namedtuple("FeatureKinds", ["coarse_grained_pdfs", "coarse_grained_field", "mask", "number_of_columns", "column_labels"])
 
     def analyse_point_density_frequence(self, page_features, debug=True, axe_len_X=100, axe_len_Y=100) -> FeatureKinds:
         points2d = numpy.column_stack((page_features.x, page_features.y))
@@ -331,13 +251,13 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
 
         number_of_columns = self.number_of_columns(density2D=fine_grained_field.T)
 
-        mask = self.header_footer_mask(
+        mask, column_labels = self.header_footer_mask(
             fine_grained_field,
             fine_grained_pdfs,
             edges_and_points[:-4],
             number_of_columns,
             page_features.divs)
-        return self.FeatureKinds(coarse_grained_pdfs, coarse_grained_field, mask, number_of_columns)
+        return self.FeatureKinds(coarse_grained_pdfs, coarse_grained_field, mask, number_of_columns, column_labels)
 
     def most_common_value(self, values, constraint=None):
         if constraint:
@@ -361,8 +281,8 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         for height in range(
                 int(config.page_array_model * 0.1),
                 int(config.page_array_model * 0.9),
-                int(config.page_array_model * 0.05)):
-            peaks, _ = find_peaks(density2D[height], distance=15, prominence=0.0001)
+                int(config.page_array_model * 0.01)):
+            peaks, _ = find_peaks(density2D[height], distance=15, prominence=0.000001)
             peaks_at_height_steps.append(peaks)
         lens = [len(peaks) for peaks in peaks_at_height_steps if len(peaks) != 0]
         number_of_clumns = self.most_common_value(lens)
@@ -373,150 +293,72 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
     def header_footer_mask(self, field, pdfs, points, number_of_culumns, divs):
         mask = numpy.full_like(pdfs, False).astype(bool)
 
-        if  len(pdfs) > 10:
-            indexed_points = list(enumerate(points))
-            indices = numpy.array(range(len(points)))
-            # raw column sorting
-            x_sorted_points = [(int(indexed_point[1][0] / (0.7 / number_of_culumns)), indexed_point) for indexed_point in indexed_points]
-            # raw top down sorting
-            xy_sorted_points = sorted(x_sorted_points, key=lambda x:x[0] - x[1][1][1])
+        indexed_points = list(enumerate(points))
+        indices = numpy.array(range(len(points)))
+        # raw column sorting
 
-            y_sorted_indexed_points = [(len(points)+1,0)] + \
-                                      [(column_index_point_tuple[1][0], column_index_point_tuple[1][1][1])
-                                          for column_index_point_tuple
-                                          in xy_sorted_points] + \
-                                      [(len(points)+2,1)]
+        left_border = min(points[:,0][points[:,0]>0.05])
+        x_sorted_points = [(int(((indexed_point[1][0] - left_border + 0.9)/(1-2*left_border) * number_of_culumns)), indexed_point)
+                           for indexed_point in indexed_points]
 
-            indexed_distances = [(i2, (numpy.abs(b - a), numpy.abs(c - b)))
-                                for (i1, a), (i2, b), (i3, c)
-                                in threewise(y_sorted_indexed_points)]
-            dY = list(id[1] for id in indexed_distances)
-            dI = numpy.array(list(id[0] for id in indexed_distances))
+        if not (len({t[0] for t in x_sorted_points}) == number_of_culumns):
+            logging.info ("other number of columns detexted, than sorted to")
+        # raw top down sorting
+        xy_sorted_points = sorted(x_sorted_points, key=lambda x:x[0]*1000 - x[1][1][1])
 
-            # If there are text boxes on the same height, the distance will be very small due to rounding,
-            # replace them with the value for the textbox in the same line
-            threshold = 0.005
-            d0y1 = 0
-            d0y2 = 0
-            to_sanitize = list(enumerate(dY))
-            sanitizing_half = int(len(to_sanitize)/2)
-            self.sanitize_line_distances(d0y1, d0y2, dY, threshold, to_sanitize[:sanitizing_half][::-1])
-            self.sanitize_line_distances(d0y1, d0y2, dY, threshold, to_sanitize[sanitizing_half::1])
+        y_sorted_indexed_points = [(len(points)+1,0)] + \
+                                  [(column_index_point_tuple[1][0], column_index_point_tuple[1][1][1])
+                                      for column_index_point_tuple
+                                      in xy_sorted_points] + \
+                                  [(len(points)+2,1)]
+
+        indexed_distances = [(i2, list((numpy.abs(b - a), numpy.abs(c - b))))
+                            for (i1, a), (i2, b), (i3, c)
+                            in threewise(y_sorted_indexed_points)]
+        dY = list(id[1] for id in indexed_distances)
+        dI = numpy.array(list(id[0] for id in indexed_distances))
+
+        # If there are text boxes on the same height, the distance will be very small due to rounding,
+        # replace them with the value for the textbox in the same line
+        threshold = 0.3
+        to_sanitize = list(enumerate(dY))
+        self.sanitize_line_distances(dY, threshold, to_sanitize, direction = 1)
+        self.sanitize_line_distances(dY, threshold, to_sanitize, direction = -1)
 
 
-            norm_distance = numpy.median(list(more_itertools.flatten(dY)))
-            distance_std = norm_distance * 0.1
-            logging.debug(f"median {norm_distance} std {distance_std}")
+        norm_distance = numpy.median(list(more_itertools.flatten(dY)))
+        distance_std = norm_distance * 0.1
 
-            valid_points_at = numpy.logical_and(dY > norm_distance - distance_std, dY < norm_distance + distance_std).any(axis=1)
-            good = indices[dI[valid_points_at]]
-            mask[good] = True
-        return mask
+        logging.debug(f"median {norm_distance} std {distance_std}")
 
-    def sanitize_line_distances(self, d0y1, d0y2, dY, threshold, to_sanitize):
-        for i, (dy1, dy2) in to_sanitize:
-            if dy1 < threshold:
-                dY[i] = (d0y1, dy2)
+        valid_points_at = numpy.logical_and(dY > norm_distance - distance_std, dY < norm_distance + distance_std).any(axis=1)
+        good = indices[dI[valid_points_at]]
+        mask[good] = True
+        column_indices = numpy.full_like(divs, 0)
+        column_indices[indices[dI]] = numpy.array([column_index for column_index, point in xy_sorted_points])
+
+        return mask, column_indices
+
+    def sanitize_line_distances(self, dY, threshold, to_sanitize, direction):
+        dd_overwrite = 0
+        if direction == 1:
+            tindex = 1
+        elif direction ==-1:
+            tindex = 0
+        for i, dyy in to_sanitize[::direction]:
+            if dyy[tindex] < threshold:
+                dY[i][tindex] = dd_overwrite
             else:
-                d0y1 = dy1
-            if dy1 < threshold:
-                dY[i] = (dy1, d0y2)
-            else:
-                d0y2 = dy2
+                dd_overwrite = dyy[tindex]
 
 
 import unittest
 
 
-class Updater(object):
-    # the following looks stupid, but it's hard to crate an empty df with dtypes
-
-    params = {}
-    def __init__(self,
-                 params : Dict[str, Tuple[float, float, float]],
-                 original_ml_kwargs : Dict,
-                 patience = 3,
-                 n=3,
-                 accuracy = 0.01):
-        self.original_ml_kwargs = original_ml_kwargs.copy()
-        self.init_choices()
-        self.n = n
-        self.patience = patience
-        self.accuracy = accuracy
-
-        self.sized = Counter()
-        for param_name, range_tuple in params.items():
-            self.init_generator_and_params(param_name, range_tuple, n=self.n)
-
-    def init_generator_and_params(self, param_name, range_tuple, n):
-        self.params[param_name] = list(range_parameter(range_tuple, n))
-        setattr(self, param_name, range_parameter(range_tuple, n))
-
-    def init_choices(self):
-        self.choices = pandas.DataFrame({'param': ["start"], 'value': [0.0], 'score': [0.0], 'state': [{}]})
-        self.choices = self.choices[[False]]
-
-    choices_i = 0
-    def notate(self, option, score, ml_kwargs):
-        self.choices.loc[self.choices.shape[0]] = [*option, score, ml_kwargs]
-        self.choices_i += 1
-
-    def update(self):
-        if len(self.choices) == 0:
-            return self.best_solution
-        self.choices.reset_index(drop=True, inplace=True)
-
-        good_option = self.choices['score'].idxmax()
-        choice = self.choices.iloc[good_option]
-
-        param = choice.param
-        s_tuple = self.params[param]
-        other_solutions_of_this_trial = self.choices.loc[self.choices.param.str.contains(param)]
-        as_good_solutions = other_solutions_of_this_trial.loc[other_solutions_of_this_trial.score == choice.score]
-
-        if len(as_good_solutions) > 1:
-            if self.sized[param] > self.patience or  as_good_solutions.value.std() < self.accuracy:
-                logging.info("No patience anymore, good enough")
-                self.choices = self.choices.loc[self.choices.param != param]
-                return self.update()
-
-            resolution = len(s_tuple) + 1
-            self.init_generator_and_params(param, self.params[param], n=resolution)
-            s_tuple = self.params[param]
-            self.params[param] = list(nd_fractal(choice.value, s_tuple, n=resolution, lense=2))
-            self.sized[param] += 1
-
-        else:
-            self.best_solution = choice
-            resolution = 3
-            s_value = as_good_solutions.value.mean()
-            self.init_generator_and_params(param, self.params[param], n=resolution)
-            s_tuple = self.params[param]
-            self.params[param] = list(nd_fractal(s_value, s_tuple, n=resolution, lense=1))
-            self.sized[param] -= 1
-        self.init_choices()
-
-    def options(self):
-        for param in self.params:
-            yield from self.get_following(param)
-
-    def get_following(self, param):
-        for value in self.params[param]:
-            new_option = self.original_ml_kwargs.copy()
-            new_option.update({param:value})
-            logging.warning(f"setting {param} to {value}")
-            yield param, value, new_option
-
-    def give_feedback(self):
-        pprint.pprint(self.choices)
-        pprint.pprint(self.sized)
-
-
-
 class TestPaperReader(unittest.TestCase):
     tfu_pdf = TrueFormatUpmarkerPdf2HTMLEX(debug=True, parameterize=False)
 
-    def test_a_train(self):
+    def _test_train(self):
         hdbscan_kwargs = {
             'algorithm': 'boruvka_balltree',
             'metric': 'hamming',
@@ -575,7 +417,7 @@ class TestPaperReader(unittest.TestCase):
         score_pdf = pdf_obj.verify(columns=columns, serious=True, test_document=True)
         return score_pdf
 
-    def xtest_layout_files(self):
+    def test_layout_files(self):
         files = list(pathlib.Path('test/data').glob('*.html'))
         for path in files:
             path = str(path)
@@ -592,51 +434,48 @@ class TestPaperReader(unittest.TestCase):
             assert pdf_obj.columns == columns
             assert os.path.exists(kwargs['html_write_to'])
 
-
-
-
-    def xtest_columns_and_file_existence(self):
+    def test_columns_and_file_existence(self):
         docs = [
             {
-                'html_path_before': 'Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
-                'html_path_after': 'Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.test.html',
+                'html_read_from': 'Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
+                'html_write_to': 'Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.test.html',
                 'cols': 3
             },
             {
-                'html_path_before': 'Sonja Vermeulen - Climate Change and Food Systems.pdf.html',
-                'html_path_after': 'Sonja Vermeulen - Climate Change and Food Systems.pdf.html.pdf2htmlEX.test.html',
+                'html_read_from': 'Sonja Vermeulen - Climate Change and Food Systems.pdf.html',
+                'html_write_to': 'Sonja Vermeulen - Climate Change and Food Systems.pdf.html.pdf2htmlEX.test.html',
                 'cols': 2
             },
             {
-                'html_path_before': 'Wei Quian - Translating Embeddings for Knowledge Graph Completion with Relation Attention Mechanism.pdf.html',
-                'html_path_after': 'Wei Quian - Translating Embeddings for Knowledge Graph Completion with Relation Attention Mechanism.test.html',
+                'html_read_from': 'Wei Quian - Translating Embeddings for Knowledge Graph Completion with Relation Attention Mechanism.pdf.html',
+                'html_write_to': 'Wei Quian - Translating Embeddings for Knowledge Graph Completion with Relation Attention Mechanism.test.html',
                 'cols': 2
             },
-            {'html_path_before': 'Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html',
-             'html_path_after': 'Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html.pdf2htmlEX.test.html',
+            {'html_read_from': 'Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html',
+             'html_write_to': 'Ludwig Wittgenstein - Tractatus-Logico-Philosophicus.pdf.html.pdf2htmlEX.test.html',
              'cols': 1
              },
 
 
 
             {
-                'html_path_before': 'Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.html',
-                'html_path_after': 'Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.pdf2htmlEX.test.html',
+                'html_read_from': 'Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.html',
+                'html_write_to': 'Filipe Mesquita - KnowledgeNet: A Benchmark Dataset for Knowledge Base Population.pdf.pdf2htmlEX.test.html',
                 'cols': 2
             },
             {
-                'html_path_before': 'Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
-                'html_path_after': 'Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.test.html',
+                'html_read_from': 'Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.html',
+                'html_write_to': 'Laia Font-Ribera - Short-Term Changes in Respiratory Biomarkers after Swimmingin a Chlorinated Pool.pdf.pdf2htmlEX.test.html',
                 'cols': 3
             },
             {
-                'html_path_before': 'F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.html',
-                'html_path_after': 'F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.pdf2htmlEX.test.html',
+                'html_read_from': 'F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.html',
+                'html_write_to': 'F. Ning - Toward automatic phenotyping of developing embryos from videos.pdf.pdf2htmlEX.test.html',
                 'cols': 2
             },
             {
-                'html_path_before': 'HumKno.pdf.html',
-                'html_path_after': 'HumKno.pdf.pdf2htmlEX.test.html',
+                'html_read_from': 'HumKno.pdf.html',
+                'html_write_to': 'HumKno.pdf.pdf2htmlEX.test.html',
                 'cols': 1
             }
         ]
@@ -645,13 +484,13 @@ class TestPaperReader(unittest.TestCase):
             logging.error(kwargs)
             columns = kwargs['cols']
             del kwargs['cols']
-            kwargs['html_path_before'] = config.appcorpuscook_docs_document_dir + kwargs['html_path_before']
-            kwargs['html_path_after'] = config.appcorpuscook_docs_document_dir + kwargs['html_path_after']
+            kwargs['html_read_from'] = config.appcorpuscook_docs_document_dir + kwargs['html_read_from']
+            kwargs['html_write_to'] = config.appcorpuscook_docs_document_dir + kwargs['html_write_to']
             self.tfu_pdf.convert_and_index(**kwargs)
             print (self.tfu_pdf.number_columns, columns)
             assert self.tfu_pdf.number_columns == columns
             assert self.tfu_pdf.indexed_words
-            assert os.path.exists(kwargs['html_path_after'])
+            assert os.path.exists(kwargs['html_write_to'])
 
 if __name__ == '__main__':
     unittest.main()

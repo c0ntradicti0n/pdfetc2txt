@@ -17,6 +17,8 @@ log_files = {
     "dist": "../Distinctiopus4/log.log"
 }
 
+layouteagle_modeldir = "models/layouteagle/bestmodel"
+
 new_corpus_increment = "../CorpusCook/server/corpus/"
 cc_corpus_collection_path = "../CorpusCook/manually_annotated/"
 cc_corpus_working_path = "../CorpusCook/server/corpus/"

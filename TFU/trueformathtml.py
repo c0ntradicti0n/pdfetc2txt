@@ -26,7 +26,7 @@ class TrueFormatUpmarkerHTML (TrueFormatUpmarker):
         return tag.name == "p" or (tag.name == "p")
 
 
-    def generate_css_tagging_document(self, html_before_path, html_after_path, debug_folder):
+    def generate_css_tagging_document(self, html_before_path, html_after_path):
         with open(html_before_path, "r") as f:
             html = f.read()
 

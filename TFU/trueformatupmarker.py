@@ -148,7 +148,7 @@ class TrueFormatUpmarker(object):
             where to replace and list of tokens
         """
         features.sort_values(by="reading_sequence", inplace=True)
-        features["debug_color"] = abs(features.cluster + 2) / (10)
+        features["debug_color"] = abs(features.column_labels + 2) / (5)
         for index, feature_line in features.iterrows():
 
             if not feature_line.relevant:
