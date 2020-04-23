@@ -22,11 +22,10 @@ logging.getLogger().setLevel(logging.INFO)
 
 os.system(". ~/.bashrc")
 
-import layouteagle
 
 reader = PaperReader(_length_limit=40000)
-layout_reader = layouteagle.LayoutEagle()
-layout_reader.make_model(n=13)
+#layout_reader = layouteagle.LayoutEagle()
+#layout_reader.make_model(n=13)
 
 
 def work_out_file(path):
@@ -87,9 +86,6 @@ def latest_difference_between(n=10):
         logging.error("Connection was refused by site")
     except urllib.error.URLError:
         logging.error("Connection was refused, no internet")
-
-import layouteagle
-#= LayoutEagle(config.layouteagle_modeldir)
 
 if not os.path.isdir(config.layouteagle_modeldir):
     layouteagle.make_model(n=150)
