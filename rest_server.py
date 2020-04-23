@@ -26,7 +26,7 @@ import layouteagle
 
 reader = PaperReader(_length_limit=40000)
 layout_reader = layouteagle.LayoutEagle()
-layout_reader.make_model(n=18)
+layout_reader.make_model(n=13)
 
 
 def work_out_file(path):
@@ -88,8 +88,8 @@ def latest_difference_between(n=10):
     except urllib.error.URLError:
         logging.error("Connection was refused, no internet")
 
-from layouteagle.LayoutEagle import LayoutEagle
-layouteagle = LayoutEagle(config.layouteagle_modeldir)
+import layouteagle
+#= LayoutEagle(config.layouteagle_modeldir)
 
 if not os.path.isdir(config.layouteagle_modeldir):
     layouteagle.make_model(n=150)
