@@ -40,22 +40,11 @@ class TrueFormatUpmarkerPdf2HTMLEX (TrueFormatUpmarker):
         with open(html_read_from, 'r', encoding='utf8') as f:
             soup = bs4.BeautifulSoup(f.read(), features='lxml')
 
-
-
         # create data and features for clustering
         css_dict = self.get_css(soup)
-        features = self.extract_features(soup=soup, css_dict=css_dict, web_view=web_view)
-
+        features = self.extract_features(soup=soup, css_dict=css_dict)
 
         self.pdf_obj.columns = self.number_columns
-
-
-        self.HDBSCAN_cluster_divs(
-                features=features,
-                features_to_use=["x", "font-size"],
-                debug_path=html_write_to,
-                hdbscan_kwargs=hdbscan_kwargs
-                )
 
         self.manipulate_document(soup=soup,
                                  features=features)
