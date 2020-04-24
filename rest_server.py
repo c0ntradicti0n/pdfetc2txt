@@ -87,9 +87,6 @@ def latest_difference_between(n=10):
     except urllib.error.URLError:
         logging.error("Connection was refused, no internet")
 
-if not os.path.isdir(config.layouteagle_modeldir):
-    layouteagle.make_model(n=150)
-
 
 import topic_modelling
 t_diff = topic_modelling.Topicist(directory=config.appcorpuscook_diff_txt_dir)
