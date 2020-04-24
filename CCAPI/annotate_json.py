@@ -1,18 +1,14 @@
 import logging
-import os
-import urllib
-from urllib.request import Request
 
 import requests
-from bs4 import BeautifulSoup
 from layouteagle import config
-from layouteagle.LayoutReader.trueformatpdf2htmlEX import TrueFormatUpmarkerPDF2HTMLEX
 from layouteagle.helpers.cache_tools import file_persistent_cached_generator
 from layouteagle.pathant.Converter import converter
+from layouteagle.pathant.PathSpec import PathSpec
 
 
 @converter("text.json", "nlp.css")
-class AnnotateJson(TrueFormatUpmarkerPDF2HTMLEX):
+class AnnotateJson(PathSpec):
     def __init__(self, debug=True, *args, n=15, **kwargs):
         super().__init__(*args, **kwargs)
         self.n = n
