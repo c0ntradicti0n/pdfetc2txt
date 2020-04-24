@@ -7,10 +7,8 @@ import requests
 from bs4 import BeautifulSoup
 from flask import request
 from flask import Flask
-from regex import regex
 
 from helpers.programming import deprecated
-from progress_viewer import whats_new
 import config
 from anyfile2text import PaperReader
 from profiler import qprofile
@@ -19,13 +17,18 @@ app = Flask(__name__)
 import logging
 logging.getLogger().setLevel(logging.INFO)
 
+from CCAPI.annotate_json import AnnotateJson
+from Scraper.ScrapeDifferenceBetween import DifferncenceBetweenScraper
+from Topics.topics import MakeTopics
+from Topics.predict_topics import PredictTopics
 
-os.system(". ~/.bashrc")
+from layouteagle.LayoutEagle import LayoutEagle
+layouteagle = LayoutEagle()
+layouteagle.make_model()
 
+difference_between_pipe = PfadAmeise('html', 'nlp.css')
+pdf_pipe = PfadAmeise('pdf', 'nlp.css')
 
-reader = PaperReader(_length_limit=40000)
-#layout_reader = layouteagle.LayoutEagle()
-#layout_reader.make_model(n=13)
 
 
 def work_out_file(path):
@@ -52,6 +55,7 @@ def work_out_file(path):
 
 
 def latest_difference_between(n=10):
+
     try:
         logging.info("downloading front page of differencebetween")
 
@@ -61,6 +65,9 @@ def latest_difference_between(n=10):
 
         f = urllib.request.urlopen(req)
         page = f.read()
+
+
+
         soup = BeautifulSoup(page, 'html.parser')
         anchors = list(soup.find_all('a', attrs = {'rel':'bookmark'})) [:n]
         for anchor in anchors:
@@ -88,17 +95,6 @@ def latest_difference_between(n=10):
         logging.error("Connection was refused, no internet")
 
 
-import topic_modelling
-t_diff = topic_modelling.Topicist(directory=config.appcorpuscook_diff_txt_dir)
-latest_difference_between()
-t_docs = topic_modelling.Topicist(directory=config.appcorpuscook_docs_txt_dir)
-
-def code_detect_replace(text):
-    return text
-
-
-
-
 
 @qprofile
 @app.route("/docload", methods=["POST"])
@@ -118,7 +114,7 @@ def upload():
 
     # Updating topics
     logging.info("Updating topics")
-    t_docs.update()
+    MakeTopics.update()
 
     logging.info("Finished upload, topic modelling and upmarking")
     return ""
@@ -131,15 +127,14 @@ def recompute_all():
     recompute(config.appcorpuscook_diff_html_dir)
     # Updating topics
     logging.info("Updating topics")
-    t_docs.update()
+    MakeTopics.update()
 
 
 def recompute(folder):
     logging.info("Recomputation started")
     files = os.listdir(folder)
     files = [f for f in files if not (f.endswith("html") or f.endswith('txt'))]
-    for f in files:
-        work_out_file(config.appcorpuscook_docs_document_dir + f)
+    list(pdf_pipe(files))
     logging.info("Recomputation finished")
     return ""
 

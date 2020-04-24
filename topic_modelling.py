@@ -14,7 +14,6 @@ rake = Rake(language_code="en",
 
 class Topicist:
     def __init__(self, directory):
-
         self.directory = directory
         self.update()
 
